@@ -19,164 +19,178 @@ root: Workspace
 
 """
 
-import logging
-import threading
 import firecloud.api as fapi
+import threading
 
-from fs.info import Info
 from fs.base import FS
+from fs.enums import ResourceType
+from fs.info import Info
 from google.cloud import storage
 
 
 """
 Namespace == Google project name
 """
-class Namespace():
+class BaseAnVILResource:
+    def __init__(self):
+        self.folders = {}
+
+    def get_info(self):
+        _result = {
+            "basic": {
+                "name": self.name,
+                "is_dir": self.is_dir
+            },
+            "details": {}
+        }
+        _details = _result["details"]
+        if self.is_dir:
+            _details["type"] = ResourceType.directory
+        else:
+            _details["type"] = ResourceType.file
+            _details["size"] = self.size
+        return Info(_result)
+
+
+class Namespace(BaseAnVILResource):
     def __init__(self, namespace_name):
+        super().__init__()
         self.name = namespace_name
-        self.workspaces = {}
+        self.is_dir = True
 
     def fetch_workspace(self, workspace_name):
-        self.workspaces[workspace_name] = Workspace(self, workspace_name)
+        self.folders[workspace_name] = Workspace(self, workspace_name)
 
     def __str__(self):
         out = "<Namespace {}>".format(self.name)
         for ws in self.workspaces:
             out += "\n{}".format(str(ws))
 
-class Workspace():
+class Workspace(BaseAnVILResource):
     def __init__(self, namespace_reference,  workspace_name):
-        self.namespace = namespace_object
+        super().__init__()
+        self.namespace = namespace_reference
         self.name = workspace_name
-        self.fetch_info()
-        self.bucket = BucketData(self)
-        # mimicking anvil folder structure:
-        self.folders = {
-            "Other Data": {},
-        }
-
+        self.is_dir = True
+        self.fetch_api_info()
 
     def __str__(self):
         out = "  <Workspace {}>".format(self.name)
         #for objects in entities ...
 
-    def fetch_info(self):
+    def fetch_api_info(self):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
-        resp = fapi.get_workspace(name=self.name, fields=fields).json()
-        fapi._check_response_code(resp, 200)
+        resp = fapi.get_workspace(namespace=self.namespace.name, workspace=self.name, fields=fields).json()
         self.attributes = resp["workspace"]["attributes"]
-        self.bucket = BucketData(self, resp["workspace"]["bucketName"])
+        self.folders["Other Data/"] = WorkspaceBucket(resp["workspace"]["bucketName"])
         self.lastModified = resp["workspace"]["lastModified"]
 
-
-#base anvil object
-class Entity():
-    pass
+    def get_info_from_path(self, path):
+        assert(path[0] == "/")
+        idx = path.find("/", 1)
+        # if the next slash is the last slash, its a directory
+        if idx == len(path) - 1:
+            return self.folders[path[1:]].get_info()
+        first_subfolder = path[1:idx+1]
+        remainder = path[idx:]
+        return self.folders[first_subfolder].get_info_from_path(remainder)
 
 
 # google stores bucket files as a/b/c.extension;
 #   so file dictionary stores { "a/b/":["c.extension", ...]}
-class BucketFile():
+class BucketFile(BaseAnVILResource):
     def __init__(self, name, size):
         self.name = name
         self.size = size
+        self.is_dir = False
 
-class BucketFolder():
-    def __init__(self):
-        self.files = {}
-        self.folders = {}
-
-    def add_file(bucketfile_obj):
-        self.files[bucketfile_obj.name] = bucketfile_obj
-    
-    def add_folder(bucketfolder_obj):
-        self.folders[bucketfolder_obj.name] = bucketfolder_obj
-
-
-class RootBucketFolder(BucketFolder):
-    # Path must end in '/' if seeking a directory to avoid ambiguity
-    #    a <- file named a in root
-    #    a/ <- folder named a in root
-    def path_to_object(self, path):
-        # base case
-        if path == "/":
-            return self
-        # sanitize input
-        if path[0] == "/":
-            path = path[1:]
-        # check if folder or file
-        if path[-1] == "/":
-            objtype = BucketFolder
-        else:
-            objtype = BucketFile
-        # initialize 'current directory'
-        current_dir = self
-        for i, step in enumerate(steps, 1):
-            # if its the last step, it's the name of the object we're after
-            if i == len(step):
-                if objtype == BucketFile:
-                    return current_dir.files[step]
-                else:
-                    return current_dir.folders[step]
-            # if it isnt the last step, it's necessarily a folder
-            current_dir = current_dir.folders[step]
-
-
-class BucketData():
-    def __init__(self, workspace_reference, bucketname):
-        self.client = storage.Client()
-        self.workspace = workspace_reference
-        self.name = bucketname
-        self.fetch_info()
-        self.root = RootBucketFolder()
-
-    def _insert_file(self, bucketfile):
-        bfname = bucketfile.name
-        idx = bfname.rfind('/')
-        if idx < 0:
-            self.files["/"].append(bucketfile)
-        else:
-            dirstr = bfname[:idx]
-            if dirstr not in self.files.keys():
-                self.files[dirstr] = []
-            self.files[dirstr].append(bucketfile)
-
-    def fetch_info(self):
-        bucket = self.client.get_bucket(self.name)
-        blobs = bucket.list_blobs()
-        # can generate signed urls from blobs with 'blob.generate_signed_url'
+class WorkspaceBucket(BaseAnVILResource):
+    def __init__(self, bucket_name):
+        super().__init__()
+        self.name = bucket_name
+        self.is_dir = True
+        google_bucket = storage.Client().get_bucket(bucket_name)
+        blobs = google_bucket.list_blobs()
+        #NOTE can generate signed urls from blobs with 'blob.generate_signed_url'
+        #NOTE blobs are never just folders
         for blob in blobs:
-            self._insert_file(BucketFile(blob.name, blob.size)
+            self._insert_file(blob.name, blob.size)
 
-class Table(Entity):
+    def _insert_file(self, bucket_file, file_size):
+        print("inserting {}".format(bucket_file))
+        idx = bucket_file.find('/')
+        # if there is no '/' its a file
+        if idx < 0:
+            self.folders[bucket_file] = BucketFile(bucket_file, file_size)
+        else:
+            current_level = self.folders
+            split = bucket_file.split("/")
+            levels = split[:-1]
+            file_name = split[-1]
+            for level in levels:
+                level = level + "/"
+                if level not in current_level:
+                    current_level[level] = {}
+                current_level = current_level[level]
+            current_level[file_name] = BucketFile(file_name, file_size)
+
+    def _make_folder_info(self, name):
+        return {
+            "basic": {
+                "name": name,
+                "is_dir": self.is_dir
+            },
+            "details": {
+                "type": ResourceType.directory
+            }
+        }
+        _details = _result["details"]
+        if self.is_dir:
+            _details["type"] = ResourceType.directory
+
+    def get_info_from_path(self, path):
+        assert(path[0] == "/")
+        levels = path.split("/")
+        if path[-1] == "/": # if final destination is a folder
+            return self._make_folder_info(levels[-2] + "/")
+        # if we're here, its a file with no terminal '/'
+        current_obj = self.folders
+        for level in levels[:-1]:
+            current_obj = current_obj[level]
+        return current_obj.get_info()
+
+
+class Table(BaseAnVILResource):
     pass
 
-class Cohort(Entity):
+class Cohort(BaseAnVILResource):
     pass
 
 
 # READ ONLY filesystem?
 class AnVILFS(FS):
+    # input = name strings
     def __init__(self, namespace, workspace):
         super(AnVILFS, self).__init__()
         #self._lock = threading.RLock()
         self.namespace = Namespace(namespace)
         self.namespace.fetch_workspace(workspace)
-"""
-REQUIRED FUNCTIONS
-    #TODO:
-    listdir() Get a list of resources in a directory.
-    makedir() Make a directory.
-    openbin() Open a binary file.
-    remove() Remove a file.
-    removedir() Remove a directory.
-    setinfo() Set resource information.
-    # for network systems, scandir needed otherwise default calls a combination of listdir and getinfo for each file.
-"""
+        self.workspace = self.namespace.folders[workspace]
+
     def getinfo(self, path, namespaces=None):
-        obj = 
-        rawInfo = {
-            "basic": {
-                name
-            }
-        }
+        return self.workspace.get_info_from_path(path)
+
+# required functions #TODO
+    def listdir():# Get a list of resources in a directory.
+        pass
+    def makedir():# Make a directory.
+        pass
+    def openbin():# Open a binary file.
+        pass
+    def remove():# Remove a file.
+        pass
+    def removedir():# Remove a directory.
+        pass
+    def setinfo():# Set resource information.
+        pass
+    # for network systems, scandir needed otherwise default calls a combination of listdir and getinfo for each file.
