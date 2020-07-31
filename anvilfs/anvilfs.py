@@ -24,6 +24,7 @@ import threading
 
 from fs.base import FS
 from fs.enums import ResourceType
+from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
 from google.cloud import storage
 
@@ -51,6 +52,15 @@ class BaseAnVILResource:
             _details["size"] = self.size
         return Info(_result)
 
+    def make_folder_info(self, name):
+        return Info({
+            "basic": {
+                "name": name,
+                "is_dir": True
+            },
+            "details": {
+                "type": ResourceType.directory
+            }})
 
 class Namespace(BaseAnVILResource):
     def __init__(self, namespace_name):
@@ -82,18 +92,30 @@ class Workspace(BaseAnVILResource):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
         resp = fapi.get_workspace(namespace=self.namespace.name, workspace=self.name, fields=fields).json()
         self.attributes = resp["workspace"]["attributes"]
+        self.bucket_name = resp["workspace"]["bucketName"]
         self.folders["Other Data/"] = WorkspaceBucket(resp["workspace"]["bucketName"])
         self.lastModified = resp["workspace"]["lastModified"]
 
-    def get_info_from_path(self, path):
+    def get_object_from_path(self, path):
         assert(path[0] == "/")
+        if path == "/":
+            return self.folders
         idx = path.find("/", 1)
         # if the next slash is the last slash, its a directory
         if idx == len(path) - 1:
-            return self.folders[path[1:]].get_info()
+            return self.folders[path[1:]]
         first_subfolder = path[1:idx+1]
         remainder = path[idx:]
-        return self.folders[first_subfolder].get_info_from_path(remainder)
+        return self.folders[first_subfolder].get_object_from_path(remainder)
+
+    def get_info_from_path(self, path):
+        obj = self.get_object_from_path(path)
+        if isinstance(obj, dict) or obj.is_dir:
+            return self.make_folder_info(path.split("/")[-2] + "/")
+        return obj.get_info()
+    
+    def get_dirlist_from_path(self,path):
+        pass
 
 
 # google stores bucket files as a/b/c.extension;
@@ -114,9 +136,15 @@ class WorkspaceBucket(BaseAnVILResource):
         #NOTE can generate signed urls from blobs with 'blob.generate_signed_url'
         #NOTE blobs are never just folders
         for blob in blobs:
-            self._insert_file(blob.name, blob.size)
+            self.insert_file(blob.name, blob.size)
 
-    def _insert_file(self, bucket_file, file_size):
+    def __getitem__(self, item):
+        return self.folders[item]
+
+    def keys(self):
+        return self.folders.keys()
+
+    def insert_file(self, bucket_file, file_size):
         print("inserting {}".format(bucket_file))
         idx = bucket_file.find('/')
         # if there is no '/' its a file
@@ -134,30 +162,24 @@ class WorkspaceBucket(BaseAnVILResource):
                 current_level = current_level[level]
             current_level[file_name] = BucketFile(file_name, file_size)
 
-    def _make_folder_info(self, name):
-        return {
-            "basic": {
-                "name": name,
-                "is_dir": self.is_dir
-            },
-            "details": {
-                "type": ResourceType.directory
-            }
-        }
-        _details = _result["details"]
-        if self.is_dir:
-            _details["type"] = ResourceType.directory
-
-    def get_info_from_path(self, path):
+    def get_object_from_path(self, path):
         assert(path[0] == "/")
-        levels = path.split("/")
-        if path[-1] == "/": # if final destination is a folder
-            return self._make_folder_info(levels[-2] + "/")
-        # if we're here, its a file with no terminal '/'
+        if path == "/":
+            return self.folders
+        levels = path.split("/")[1:]
         current_obj = self.folders
         for level in levels[:-1]:
-            current_obj = current_obj[level]
-        return current_obj.get_info()
+            current_obj = current_obj[level + "/"]
+        if levels[-1]:
+            return current_obj[levels[-1]]
+        else:
+            return current_obj
+
+    def get_info_from_path(self, path):
+        obj = self.get_object_from_path(path)
+        if isinstance(obj, dict) or obj.is_dir:
+            return self.make_folder_info(path.split("/")[-2] + "/")
+        return obj.get_info()
 
 
 class Table(BaseAnVILResource):
@@ -177,15 +199,23 @@ class AnVILFS(FS):
         self.namespace.fetch_workspace(workspace)
         self.workspace = self.namespace.folders[workspace]
 
+    # this is all relative to the workspace, might need to be extended to namespace?
     def getinfo(self, path, namespaces=None):
         return self.workspace.get_info_from_path(path)
 
 # required functions #TODO
-    def listdir():# Get a list of resources in a directory.
-        pass
+    def listdir(self, path):# Get a list of resources in a directory.
+        try:
+            maybe_dir = self.workspace.get_object_from_path(path)
+        except KeyError as ke:
+            raise ResourceNotFound("Resource {} not found".format(path))
+        if isinstance(maybe_dir, dict) or maybe_dir.is_dir:
+            return maybe_dir.keys()
+        else:
+            raise DirectoryExpected("{} is not a directory".format(path))
     def makedir():# Make a directory.
         pass
-    def openbin():# Open a binary file.
+    def openbin(self, path, mode="r", buffering=-1, **options):
         pass
     def remove():# Remove a file.
         pass
