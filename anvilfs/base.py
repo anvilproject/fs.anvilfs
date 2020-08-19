@@ -42,7 +42,7 @@ class BaseAnVILFile(BaseAnVILResource):
         return Info(result)
     
     def get_bytes_handler(self):
-        raise NotImplementedError("Method open_bin() not implemented")
+        raise NotImplementedError("Method get_bytes_handler() not implemented")
 
 class BaseAnVILFolder(BaseAnVILResource):
     def __init__(self, name, last_modified=None):

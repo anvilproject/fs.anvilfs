@@ -1,10 +1,9 @@
 from ..base import BaseAnVILResource, BaseAnVILFile, BaseAnVILFolder
 from ..bucket import WorkspaceBucket, WorkspaceBucketFile
 from ..namespace import Namespace
-from ..workspace import Workspace
+from ..workspace import Workspace, WorkspaceData
 
 from .testutils import BaseTest, FakeBlob
-
 
 from fs.enums import ResourceType
 
@@ -232,13 +231,40 @@ class TestWorkspaceBucket(BaseTest):
         else:
             return BaseTest.success(DESC)
 
+class TestWorkspaceData(BaseTest):
+    def test__dict_to_buffer():
+        DESC = "_dict_to_buffer()"
+        data1 = {"a":"A", "b":"B"}
+        data2 = {"b":"B", "a":"A"}
+        bytesrep = b"a\tb\nA\tB"
+        wsd = WorkspaceData("one", data1)
+        buff1val = wsd.buffer.getvalue()
+        wsd._dict_to_buffer(data2)
+        buff2val = wsd.buffer.getvalue()
+        if (buff1val == bytesrep and buff1val == buff2val):
+            return BaseTest.success(DESC)
+        else:
+            return BaseTest.failure(DESC + ": identical values not equal after conversion")
+
+    def test_data_init():
+        DESC = "__init__()"
+        data = {"space":"cowboy"}
+        datab = b"space\ncowboy"
+        wsd = WorkspaceData("maurice", data)
+        if (wsd.name == "maurice" and 
+            wsd.buffer.getvalue() == datab):
+            return BaseTest.success(DESC)
+        else:
+            return BaseTest.failure(DESC + ": initialization failure")
+
 def run_all(anvil, files, folders):
     # define required arguments
     ns_name = anvil.namespace.name[:-1]
     ws_name = anvil.workspace.name[:-1]
     bucket_name = anvil.workspace.bucket_name
     print("=][=  [UNIT TESTING]  =][=")
-    # BaseAnVILResource
+    # format: a list of tuples
+    #   [ (TestClassName, [list, of, arguments]), ... ]
     objs_n_args = [
         (TestBaseANVILResource, []),
         (TestBaseAnVILFile, []), 
@@ -246,7 +272,8 @@ def run_all(anvil, files, folders):
         (TestNamespace, [ns_name, ws_name]),
         (TestWorkspace, [ns_name, ws_name]),
         (TestWorkspaceBucket, [bucket_name]),
-        (TestWorkspaceBucketFile, [])
+        (TestWorkspaceBucketFile, []),
+        (TestWorkspaceData, [])
     ]
     results = [0, 0]
     failures = []
