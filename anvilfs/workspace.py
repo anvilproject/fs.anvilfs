@@ -2,6 +2,7 @@ import firecloud.api as fapi
 
 from io import BytesIO
 from os import SEEK_END, SEEK_SET
+import re
 
 from .base import BaseAnVILFolder, BaseAnVILFile
 from .bucket import WorkspaceBucket
@@ -14,10 +15,10 @@ class WorkspaceData(BaseAnVILFile):
         self.last_modified = None
     
     def _dict_to_buffer(self, d):
-        items = sorted(d.items())
-        data = ("\t".join([k for k,v in items]) + 
-            "\n" +
-            "\t".join([v for k,v in items]))
+        keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
+        data = ""
+        for k in keys:
+            data += f"{k}\t{d[k]}\n"
         buffer = BytesIO(data.encode('utf-8'))
         position = buffer.tell()
         buffer.seek(0, SEEK_END)
