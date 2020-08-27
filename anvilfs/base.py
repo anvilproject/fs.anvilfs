@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from fs.enums import ResourceType
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info

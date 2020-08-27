@@ -5,6 +5,7 @@ from .workspace import Workspace
 from fs.base import FS
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 
+
 class AnVILFS(FS):
     def __init__(self, namespace, workspace):
         super(AnVILFS, self).__init__()
