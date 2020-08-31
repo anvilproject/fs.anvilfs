@@ -2,11 +2,15 @@ from inspect import getfullargspec
 
 class BaseTest:
     TEST_INDENT_CHARS=24 #(3 tabs)
-    def success(msg):
+    def success(msg, details=None):
+        if details:
+            msg = msg + f": {details}"
         print(" - SUCCESS: {}".format(msg))
         return (1, 0)
 
-    def failure(msg):
+    def failure(msg, details=None):
+        if details:
+            msg = msg + f": {details}"
         print(" - FAILURE: {}".format(msg))
         return (0, 1)
 
@@ -21,6 +25,8 @@ class BaseTest:
             gap = 24 - len(t) + 3
             print(" - {}:{}\t".format(t, " "*gap), end='')
             arg_ct = len(getfullargspec(getattr(self, t)).args)
+            # here because of "'NoneType' object is not iterable"?
+            #   did you RETURN BaseTest.success/failure?
             _s, _f = getattr(self, t)(*args[0:arg_ct])
             s += _s
             f += _f
@@ -35,10 +41,12 @@ class FakeBlob:
     DEFAULT_NAME = "afile/in/the/bucket.nfo"
     DEFAULT_SIZE = 1
     DEFAULT_UPDATED = "some time"
+
     def __init__(self, name=DEFAULT_NAME, size=DEFAULT_SIZE, updated=DEFAULT_UPDATED):
         self.name = name
         self.size = size
         self.updated = updated
+
     def __eq__(self, second):
         return (self.name == second.name
                 and self.size == second.size

@@ -1,12 +1,16 @@
 from ..base import BaseAnVILResource, BaseAnVILFile, BaseAnVILFolder
 from ..bucket import WorkspaceBucket, WorkspaceBucketFile
 from ..namespace import Namespace
+from ..reference import ReferenceDataFolder, ReferenceDataFile
 from ..workspace import Workspace, WorkspaceData
 
 from .testutils import BaseTest, FakeBlob
 
 from fs.enums import ResourceType
+from google.cloud import storage
 
+# global test storage client
+client = storage.Client()
 
 # base anvil resource # -------------------------
 class TestBaseANVILResource(BaseTest):
@@ -236,7 +240,7 @@ class TestWorkspaceData(BaseTest):
         DESC = "_dict_to_buffer()"
         data1 = {"a":"A", "b":"B"}
         data2 = {"b":"B", "a":"A"}
-        bytesrep = b"a\tb\nA\tB"
+        bytesrep = b"a\tA\nb\tB\n"
         wsd = WorkspaceData("one", data1)
         buff1val = wsd.buffer.getvalue()
         wsd._dict_to_buffer(data2)
@@ -249,13 +253,86 @@ class TestWorkspaceData(BaseTest):
     def test_data_init():
         DESC = "__init__()"
         data = {"space":"cowboy"}
-        datab = b"space\ncowboy"
+        datab = b"space\tcowboy\n"
         wsd = WorkspaceData("maurice", data)
         if (wsd.name == "maurice" and 
             wsd.buffer.getvalue() == datab):
             return BaseTest.success(DESC)
         else:
             return BaseTest.failure(DESC + ": initialization failure")
+
+
+class TestReferenceDataFile(BaseTest):
+    def test_init():
+        DESC = "__init__()"
+        fake_blob = FakeBlob(name="a", size=2, updated="Never")
+        rdf = ReferenceDataFile(fake_blob)
+        if (rdf.blob_handle == fake_blob and
+            rdf.name == "a" and
+            rdf.size == 2 and
+            rdf.last_modified == "Never" and
+            not rdf.is_dir ):
+            return BaseTest.success(DESC)
+        else:
+            return BaseTest.failure(DESC+ ": initialized object does not equal input")
+
+    def test_make_rdfs():
+        DESC = "make_rdfs()"
+        # public reference gs bucket file:
+        url = "gs://gcp-public-data--broad-references/hg38/v0/1000G_omni2.5.hg38.vcf.gz"
+        bucket_name = "gcp-public-data--broad-references"
+        bucket_path = "hg38/v0/1000G_omni2.5.hg38.vcf.gz"
+        file_name = "1000G_omni2.5.hg38.vcf.gz"
+        blob_size = 53238342
+        blob_updated = "2019-12-06 23:55:16.264000+00:00"
+        blob_name = bucket_path
+        # get blob
+        bucket = client.list_blobs(bucket_name, prefix=bucket_path)
+        correct_blob = None
+        for b in bucket:
+            if b.name == bucket_path:
+                correct_blob = {url: b}
+                break
+        r = ReferenceDataFile.make_rdfs(correct_blob)
+        rdf = r[0]
+        if (rdf == ReferenceDataFile(correct_blob[url]) and
+            rdf.name == file_name and
+            rdf.size == blob_size and
+            str(rdf.last_modified) == str(blob_updated) and
+            rdf.blob_handle == correct_blob[url] and
+            not rdf.is_dir):
+            return BaseTest.success(DESC)
+        else:
+            return BaseTest.failure(DESC + ": factory-constructed ReferenceDataFile != manually created")
+
+class TestReferenceDataFolder(BaseTest):
+    def test_init():
+        url = "gs://gcp-public-data--broad-references/hg38/v0/1000G_omni2.5.hg38.vcf.gz"
+        bucket_name = "gcp-public-data--broad-references"
+        bucket_path = "hg38/v0/1000G_omni2.5.hg38.vcf.gz"
+        file_name = "1000G_omni2.5.hg38.vcf.gz"
+        file_size = 53238342
+        # get blob
+        bucket = client.list_blobs(bucket_name, prefix=bucket_path)
+        correct_blob = None
+        for b in bucket:
+            if b.name == bucket_path:
+                correct_blob = {url: b}
+                break
+        DESC = "__init__()"
+        refs = {
+            "source": {
+                "reftype": correct_blob
+                }}
+        rdf = ReferenceDataFolder("test", refs)
+        if (rdf.name == "test/" and
+            isinstance(rdf["source"]["reftype"][file_name], ReferenceDataFile) and
+            rdf["source"]["reftype"][file_name].name == file_name and
+            rdf["source"]["reftype"][file_name].size == file_size):
+            return BaseTest.success(DESC)
+        else:
+            return BaseTest.failure(DESC, "created ReferenceDataFile initialized in ReferenceDataFolder != remote source")
+
 
 def run_all(anvil, files, folders):
     # define required arguments
@@ -273,7 +350,9 @@ def run_all(anvil, files, folders):
         (TestWorkspace, [ns_name, ws_name]),
         (TestWorkspaceBucket, [bucket_name]),
         (TestWorkspaceBucketFile, []),
-        (TestWorkspaceData, [])
+        (TestWorkspaceData, []),
+        (TestReferenceDataFile, []),
+        (TestReferenceDataFolder, [])
     ]
     results = [0, 0]
     failures = []

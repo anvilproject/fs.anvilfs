@@ -67,6 +67,10 @@ class BaseAnVILFolder(BaseAnVILResource):
 
         raise KeyError("Key '{}' not found".format(key))
 
+    # allow for <item> in <items>:
+    def __iter__(self):
+        return iter(self.filesystem)
+
     def key_strings(self):
         def sorter(k):
             if k[-1] == "/":
