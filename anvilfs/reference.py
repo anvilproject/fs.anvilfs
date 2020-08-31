@@ -8,13 +8,13 @@ from .base import BaseAnVILFolder, BaseAnVILFile
 class ReferenceDataFolder(BaseAnVILFolder):
     def __init__(self, name, refs):
         super().__init__(name)
+        self.init_references(refs)
 
     def init_references(self, refs):
         for source in refs:
-            # determine platform:
             # source, e.g. hg38
             source_baf = BaseAnVILFolder(source+"/")
-            ref_baf[source_baf] = None
+            self[source_baf] = None
             # reftype, e.g. axiomPoly_resource_vcf
             for reftype in refs[source]:
                 reftype_baf = BaseAnVILFolder(reftype+"/")
@@ -23,10 +23,6 @@ class ReferenceDataFolder(BaseAnVILFolder):
                 for c in contents:
                     reftype_baf[c] = None
 
-        # determine largest common prefix
-        # list resources by that prefix
-        # iterate through resources to create objects
-        # bind objects to appropriate folders
 
 class ReferenceDataFile(BaseAnVILFile):
     def __init__(self, blob):

@@ -51,18 +51,6 @@ class Workspace(BaseAnVILFolder):
         refs = self.ref_extractor(attributes)
         ref_baf = ReferenceDataFolder("Reference Data/", refs)
         self[ref_baf] = None
-        for source in refs:
-            # source, e.g. hg38
-            source_baf = BaseAnVILFolder(source+"/")
-            ref_baf[source_baf] = None
-            # reftype, e.g. axiomPoly_resource_vcf
-            for reftype in refs[source]:
-                reftype_baf = BaseAnVILFolder(reftype+"/")
-                source_baf[reftype_baf] = None
-                contents = ReferenceDataFile.make_rdfs(refs[source][reftype])
-                for c in contents:
-                    reftype_baf[c] = None
-
         # populate workspace data
         workspacedata = dict(attributes)
         blocklist_prefixes = [
