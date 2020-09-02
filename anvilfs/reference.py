@@ -1,7 +1,5 @@
 from io import BytesIO
 
-import firecloud.api as fapi
-#from google.cloud import storage
 
 from .base import BaseAnVILFolder, BaseAnVILFile
 
