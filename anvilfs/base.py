@@ -49,7 +49,7 @@ class BaseAnVILFolder(BaseAnVILResource):
         else:
             self.name = name
         self.last_modified = last_modified
-        self.filesystem = {}
+        self.children = {}
 
     def __hash__(self):
         return hash((self.name, self.__class__.__name__, self.last_modified))
@@ -59,25 +59,18 @@ class BaseAnVILFolder(BaseAnVILResource):
 
     # allow dictionary-style access, with possible objs as keys
     def __getitem__(self, key):
-        for obj in self.filesystem.keys():
-            if isinstance(obj, BaseAnVILFolder) and key[-1] != "/":
-                key = key + "/"
-            if obj.name == key:
-                return obj
+        return self.children[key]
 
-        raise KeyError("Key '{}' not found".format(key))
-
-    # allow for <item> in <items>:
+    # allow for <item> in :
     def __iter__(self):
-        return iter(self.filesystem)
+        return iter(self.children)
 
-    def key_strings(self):
+    def keys(self):
         def sorter(k):
             if k[-1] == "/":
                 k = "0"+k
             return k
-        strings = sorted([k.name for k in self.filesystem], key=sorter)
-        return strings
+        return sorted([k for k in self.children.keys()], key=sorter)
 
     def get_object_from_path(self, path):
         if path == "/" or path == "":
@@ -100,7 +93,7 @@ class BaseAnVILFolder(BaseAnVILResource):
         return base_obj
     
     def __setitem__(self, key, val):
-        self.filesystem[key] = val
+        self.children[key] = val
 
     def getinfo(self):
         _result = {

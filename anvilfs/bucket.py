@@ -20,7 +20,8 @@ class WorkspaceBucket(BaseAnVILFolder):
             raise Exception("Files should be set, not folders")
         s = path.split("/")
         if len(s) == 1:
-            self[WorkspaceBucketFile(bucket_blob)] = None
+            _wsbf = WorkspaceBucketFile(bucket_blob)
+            self[_wsbf.name] = _wsbf
         # get to underlying folder
         base = self
         for sub in s[:-1]:
@@ -28,10 +29,11 @@ class WorkspaceBucket(BaseAnVILFolder):
                 base = base[sub+"/"]
             except KeyError:
                 baf = BaseAnVILFolder(sub+"/") 
-                base[baf] = {}
+                base[baf.name] = baf
                 base = baf
         # now to insert the final object
-        base[WorkspaceBucketFile(bucket_blob)] = None
+        _wsbf = WorkspaceBucketFile(bucket_blob)
+        base[_wsbf.name] = _wsbf
 
 
 class WorkspaceBucketFile(BaseAnVILFile):

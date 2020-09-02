@@ -7,7 +7,7 @@ class Namespace(BaseAnVILFolder):
 
     def fetch_workspace(self, workspace_name):
         ws = Workspace(self, workspace_name)
-        self[ws] = None
+        self[ws.name] = ws
         return ws
 
     def __str__(self):

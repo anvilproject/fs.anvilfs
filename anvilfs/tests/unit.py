@@ -115,7 +115,7 @@ class TestBaseAnVILFolder(BaseTest):
         DESC = "__getitem__()"
         baf = BaseAnVILFolder("A","B")
         bafile = BaseAnVILFile("X", 1)
-        baf.filesystem[bafile] = None
+        baf.children[bafile.name] = bafile
         if baf["X"] == bafile:
             return BaseTest.success(DESC)
         else:
@@ -125,8 +125,8 @@ class TestBaseAnVILFolder(BaseTest):
         DESC = "__setitem__()"
         baf = BaseAnVILFolder("A","B")
         bafile = BaseAnVILFile("X", 1)
-        baf[bafile] = None
-        if bafile in baf.filesystem:
+        baf[bafile.name] = bafile
+        if bafile.name in baf.children:
             return BaseTest.success(DESC)
         else:
             return BaseTest.failure(DESC)
@@ -139,12 +139,12 @@ class TestBaseAnVILFolder(BaseTest):
         bafB = BaseAnVILFolder("B")
         bafC = BaseAnVILFolder("C")
         bafD = BaseAnVILFile("D", 1)
-        baf[bafA] = None
-        bafA[bafB] = None
-        bafB[bafC] = None
-        bafC[bafD] = None
+        baf[bafA.name] = bafA
+        bafA[bafB.name] = bafB
+        bafB[bafC.name] = bafC
+        bafC[bafD.name] = bafD
         fi = baf.get_object_from_path("A/B/C/D")
-        fo = baf.get_object_from_path("A/B/C")
+        fo = baf.get_object_from_path("A/B/C/")
         if fi == bafD and fo == bafC:
             return BaseTest.success(DESC)
         else:
@@ -165,9 +165,10 @@ class TestNamespace(BaseTest):
         DESC = "fetch_workspace()"
         ns = Namespace(ns_name)
         ws = ns.fetch_workspace(ws_name)
+        ws_folder_name = ws_name + "/"
         if ws.name[:-1] != ws_name:
             return BaseTest.failure(DESC + ": ws name")
-        if ns[ws_name] != ws:
+        if ns[ws_folder_name] != ws:
             return BaseTest.failure(DESC + ": ws obj equivalence")
         return BaseTest.success(DESC)
 
@@ -177,7 +178,7 @@ class TestWorkspace(BaseTest):
         DESC = "__init__()"
         ns = Namespace(ns_name)
         ws = Workspace(ns, ws_name)
-        if not isinstance(ws["Other Data"]["Files"], WorkspaceBucket):
+        if not isinstance(ws["Other Data/"]["Files/"], WorkspaceBucket):
             return BaseTest.failure(DESC + ": WorkspaceBucket not present")
         else:
             return BaseTest.success(DESC)
@@ -226,7 +227,6 @@ class TestWorkspaceBucket(BaseTest):
     def test_bucket_insert(bucket_name):
         DESC = "insert_file()"
         wsb = WorkspaceBucket(bucket_name)
-
         wsb.insert_file(FakeBlob())
         wsbf = WorkspaceBucketFile(FakeBlob())
         fake_insert = wsb["afile/"]["in/"]["the/"]["bucket.nfo"]
@@ -326,9 +326,9 @@ class TestReferenceDataFolder(BaseTest):
                 }}
         rdf = ReferenceDataFolder("test", refs)
         if (rdf.name == "test/" and
-            isinstance(rdf["source"]["reftype"][file_name], ReferenceDataFile) and
-            rdf["source"]["reftype"][file_name].name == file_name and
-            rdf["source"]["reftype"][file_name].size == file_size):
+            isinstance(rdf["source/"]["reftype/"][file_name], ReferenceDataFile) and
+            rdf["source/"]["reftype/"][file_name].name == file_name and
+            rdf["source/"]["reftype/"][file_name].size == file_size):
             return BaseTest.success(DESC)
         else:
             return BaseTest.failure(DESC, "created ReferenceDataFile initialized in ReferenceDataFolder != remote source")

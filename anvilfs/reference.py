@@ -12,14 +12,14 @@ class ReferenceDataFolder(BaseAnVILFolder):
         for source in refs:
             # source, e.g. hg38
             source_baf = BaseAnVILFolder(source+"/")
-            self[source_baf] = None
+            self[source_baf.name] = source_baf
             # reftype, e.g. axiomPoly_resource_vcf
             for reftype in refs[source]:
                 reftype_baf = BaseAnVILFolder(reftype+"/")
-                source_baf[reftype_baf] = None
+                source_baf[reftype_baf.name] = reftype_baf
                 contents = ReferenceDataFile.make_rdfs(refs[source][reftype])
                 for c in contents:
-                    reftype_baf[c] = None
+                    reftype_baf[c.name] = c
 
 
 class ReferenceDataFile(BaseAnVILFile):

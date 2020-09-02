@@ -46,11 +46,11 @@ class Workspace(BaseAnVILFolder):
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
         # bucket folder
         bucket_baf = BaseAnVILFolder("Other Data/")
-        self[bucket_baf] = None
+        self[bucket_baf.name] = bucket_baf
         # ref data folder
         refs = self.ref_extractor(attributes)
         ref_baf = ReferenceDataFolder("Reference Data/", refs)
-        self[ref_baf] = None
+        self[ref_baf.name] = ref_baf
         # populate workspace data
         workspacedata = dict(attributes)
         blocklist_prefixes = [
@@ -62,8 +62,10 @@ class Workspace(BaseAnVILFolder):
                 if datum.startswith(blocked):
                     del workspacedata[datum]
         if workspacedata:
-            bucket_baf[WorkspaceData("WorkspaceData.tsv", workspacedata)] = None
-        bucket_baf[WorkspaceBucket(self.bucket_name)] = None
+            _wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
+            bucket_baf[_wsd.name] = _wsd
+        _wsb = WorkspaceBucket(self.bucket_name)
+        bucket_baf[_wsb.name] = _wsb
 
     def ref_extractor(self, attribs):
         # structure:
@@ -134,4 +136,8 @@ class Workspace(BaseAnVILFolder):
 
     def fetch_api_info(self, workspace_name):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
-        return fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields).json()
+        resp = fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            resp.raise_for_status()

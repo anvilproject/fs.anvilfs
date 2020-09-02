@@ -19,13 +19,13 @@ class AnVILFS(FS):
     # Get a list of resource names (str) in a directory.
     def listdir(self, path):
         if path == "/" or path == "":
-            return self.rootobj.key_strings()
+            return self.rootobj.keys()
         try:
             maybe_dir = self.rootobj.get_object_from_path(path)
         except KeyError as ke:
             raise ResourceNotFound("Resource {} not found".format(path))
         if isinstance(maybe_dir, BaseAnVILFolder):
-            return maybe_dir.key_strings()
+            return maybe_dir.keys()
         else:
             raise DirectoryExpected("{} is not a directory".format(path))
 
