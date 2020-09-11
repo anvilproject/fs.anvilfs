@@ -9,7 +9,7 @@ import firecloud.api as fapi
 from .base import BaseAnVILFolder, BaseAnVILFile
 from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
-
+from .tables import TableDataCohort
 
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):
@@ -44,6 +44,18 @@ class Workspace(BaseAnVILFolder):
             super().__init__(workspace_name, resp["workspace"]["lastModified"])
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
+        # Tables folder
+        table_baf = BaseAnVILFolder("Tables/")
+        self[table_baf.name] = table_baf
+        cohort_baf = BaseAnVILFolder("Cohorts/")
+        table_baf[cohort_baf.name] = cohort_baf
+        einfo = self.fetch_entity_info()
+        for etype in einfo:
+            for entity in einfo[etype]:
+                if etype == "TableDataCohort":
+                    cohort_baf[entity.name] = entity
+                else:
+                    raise NotImplementedError(f"type {etype} not yet implemented")
         # bucket folder
         bucket_baf = BaseAnVILFolder("Other Data/")
         self[bucket_baf.name] = bucket_baf
@@ -141,3 +153,27 @@ class Workspace(BaseAnVILFolder):
             return resp.json()
         else:
             resp.raise_for_status()
+
+    def fetch_entity_info(self):
+        # define responses
+        resp = fapi.get_entities_with_type(namespace=self.namespace.name, workspace=self.name)
+        if resp.status_code != 200:
+            resp.raise_for_status()
+        table_objects = {
+            "cohort": TableDataCohort
+        }
+        result = {
+            a.__name__ : [] for a in table_objects.values()
+        }
+        for _r in resp.json():
+            # sorting key: entityType
+            etype = _r["entityType"] # folder
+            tdo = None
+            try:
+                tdo = table_objects[etype](_r["name"], _r["attributes"]["query"])
+            except KeyError as ke:
+                pass
+                #print(f"{ke}: skipping...")
+            if tdo:
+                result[tdo.__class__.__name__].append(tdo)
+        return result

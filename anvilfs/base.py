@@ -1,3 +1,6 @@
+from io import BytesIO
+from os import SEEK_END, SEEK_SET
+
 from fs.enums import ResourceType
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
@@ -39,6 +42,14 @@ class BaseAnVILFile(BaseAnVILResource):
         }
         return Info(result)
     
+    def string_to_buffer(self,string):
+        buffer = BytesIO(string.encode('utf-8'))
+        position = buffer.tell()
+        buffer.seek(0, SEEK_END)
+        self.size = buffer.tell()
+        buffer.seek(position, SEEK_SET)
+        return buffer
+
     def get_bytes_handler(self):
         raise NotImplementedError("Method get_bytes_handler() not implemented")
 
