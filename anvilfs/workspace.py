@@ -45,7 +45,7 @@ class Workspace(BaseAnVILFolder):
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
         # Tables folder
-        table_baf = BaseAnVILFolder("Tables/")
+        table_baf = BaseAnVILFolder("Tables/") # #TODO replace with specific tables object
         self[table_baf.name] = table_baf
         cohort_baf = BaseAnVILFolder("Cohorts/")
         table_baf[cohort_baf.name] = cohort_baf
@@ -155,12 +155,19 @@ class Workspace(BaseAnVILFolder):
             resp.raise_for_status()
 
     def fetch_entity_info(self):
+        def skip_entry(*args, **kwargs):
+            return None
         # define responses
         resp = fapi.get_entities_with_type(namespace=self.namespace.name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
+        # canonical entities: Sample, sample set, participant, participant set, pair set
+        # https://support.terra.bio/hc/en-us/articles/360033913771-Understanding-Entity-Types
         table_objects = {
-            "cohort": TableDataCohort
+            "cohort": TableDataCohort,
+            "BigQuery_table": skip_entry,
+            "participant": skip_entry, #TODO implement
+            "": skip_entry
         }
         result = {
             a.__name__ : [] for a in table_objects.values()
@@ -173,7 +180,7 @@ class Workspace(BaseAnVILFolder):
                 tdo = table_objects[etype](_r["name"], _r["attributes"]["query"])
             except KeyError as ke:
                 pass
-                #print(f"{ke}: skipping...")
+                #TODO: generic handler
             if tdo:
                 result[tdo.__class__.__name__].append(tdo)
         return result

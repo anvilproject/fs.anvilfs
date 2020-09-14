@@ -6,7 +6,12 @@ from google.cloud import bigquery
 from .base import BaseAnVILFile, BaseAnVILFolder
 
 # terra 'entities' represent tables
-#
+# #TODO: refactor to use entity types for lazy load
+class TablesFolder(BaseAnVILFolder):
+    def __init__(self):
+        self.name = "Tables/"
+
+
 class TableDataCohort(BaseAnVILFile):
     def lazybqclient(fn):
         def wrapper(*args, **kwargs):
