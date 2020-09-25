@@ -41,7 +41,7 @@ class BaseAnVILFile(BaseAnVILResource):
             }
         }
         return Info(result)
-    
+
     def string_to_buffer(self,string):
         buffer = BytesIO(string.encode('utf-8'))
         position = buffer.tell()

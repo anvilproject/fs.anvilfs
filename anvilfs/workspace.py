@@ -9,7 +9,7 @@ import firecloud.api as fapi
 from .base import BaseAnVILFolder, BaseAnVILFile
 from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
-from .tables import TableDataCohort
+from .tables import RootTablesFolder, TableDataCohort
 
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):
@@ -45,17 +45,8 @@ class Workspace(BaseAnVILFolder):
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
         # Tables folder
-        table_baf = BaseAnVILFolder("Tables/") # #TODO replace with specific tables object
+        table_baf = RootTablesFolder(self.fetch_entity_info(), self)
         self[table_baf.name] = table_baf
-        cohort_baf = BaseAnVILFolder("Cohorts/")
-        table_baf[cohort_baf.name] = cohort_baf
-        einfo = self.fetch_entity_info()
-        for etype in einfo:
-            for entity in einfo[etype]:
-                if etype == "TableDataCohort":
-                    cohort_baf[entity.name] = entity
-                else:
-                    raise NotImplementedError(f"type {etype} not yet implemented")
         # bucket folder
         bucket_baf = BaseAnVILFolder("Other Data/")
         self[bucket_baf.name] = bucket_baf
@@ -155,18 +146,27 @@ class Workspace(BaseAnVILFolder):
             resp.raise_for_status()
 
     def fetch_entity_info(self):
+        resp = fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
+        if resp.status_code != 200:
+            resp.raise_for_status()
+        return resp.json()
+
         def skip_entry(*args, **kwargs):
             return None
         # define responses
-        resp = fapi.get_entities_with_type(namespace=self.namespace.name, workspace=self.name)
-        if resp.status_code != 200:
-            resp.raise_for_status()
-        # canonical entities: Sample, sample set, participant, participant set, pair set
+        #resp = fapi.get_entities_with_type(namespace=self.namespace.name, workspace=self.name)
+        # get entities == folders for tables
+        # canonical entities: sample, sample set, participant, participant set, pair set
+        #    unofficially canon: cohort
         # https://support.terra.bio/hc/en-us/articles/360033913771-Understanding-Entity-Types
         table_objects = {
-            "cohort": TableDataCohort,
             "BigQuery_table": skip_entry,
+            "cohort": TableDataCohort,
+            "sample": skip_entry, #TODO implement
+            "sample_set": skip_entry, #TODO implement
             "participant": skip_entry, #TODO implement
+            "participant_set": skip_entry, #TODO implement
+            "pair_set": skip_entry, #TODO implement
             "": skip_entry
         }
         result = {
@@ -177,7 +177,7 @@ class Workspace(BaseAnVILFolder):
             etype = _r["entityType"] # folder
             tdo = None
             try:
-                tdo = table_objects[etype](_r["name"], _r["attributes"]["query"])
+                tdo = table_objects[etype](_r["name"], _r["attributes"])
             except KeyError as ke:
                 pass
                 #TODO: generic handler
