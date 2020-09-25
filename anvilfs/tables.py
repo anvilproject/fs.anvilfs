@@ -59,16 +59,13 @@ class TableFolder(BaseAnVILFolder):
                             addendum = ",".join(
                                 [x["entityName"] for x in val["items"]]
                             )
-                        print(f"i preadd: {addendum}")
                     else:
                         val = str(val) # enforce string
                         addendum = val
-                        print(f"e preadd: {addendum}")
                         # check if its a linkable file
                         efiletype = self.is_linkable_file(val)
                         if efiletype:
                             linked_files.append(efiletype(val, self.wsref.storage_client))
-                print(f"{attr}: add {addendum}")
                 base_table[attr].append(addendum)
             # if there are links, make them externally available by entityname_filename.tsv
         linked_files.append(TableEntriesFile(self.type + "_contents.tsv", base_table))
