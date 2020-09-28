@@ -5,6 +5,11 @@ from .workspace import Workspace
 from fs.base import FS
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 
+import datetime
+from google.auth import credentials
+import json
+import firecloud.api as fapi
+from google.auth.transport.requests import AuthorizedSession
 
 class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
     def __init__(self, scopes):
@@ -43,7 +48,7 @@ class AnVILFS(FS):
         credentials = WorkloadIdentityCredentials(scopes=scopes)
         fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
         fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
-        fapi.list_workspaces()
+#        fapi.list_workspaces()
         # /hax
         self.namespace = Namespace(namespace)
         self.workspace = self.namespace.fetch_workspace(workspace)

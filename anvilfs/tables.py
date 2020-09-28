@@ -4,8 +4,6 @@ from time import sleep
 import firecloud.api as fapi
 from google.cloud import bigquery
 
-from google.auth.transport.requests import AuthorizedSession
-
 from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile
 
