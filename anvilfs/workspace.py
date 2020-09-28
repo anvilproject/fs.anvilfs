@@ -66,6 +66,12 @@ class WorkspaceData(BaseAnVILFile):
 
 class Workspace(BaseAnVILFolder):
     def __init__(self, namespace_reference,  workspace_name):
+        # <hax>
+        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
+        credentials = WorkloadIdentityCredentials(scopes=scopes)
+        fapi.__SESSION = AuthorizedSession(credentials)
+        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
+        # </hax>
         self.storage_client = storage.Client()
         self.namespace = namespace_reference
         resp = self.fetch_api_info(workspace_name)
@@ -183,41 +189,13 @@ class Workspace(BaseAnVILFolder):
             resp.raise_for_status()
 
     def fetch_entity_info(self):
+        # <hax>
+        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
+        credentials = WorkloadIdentityCredentials(scopes=scopes)
+        fapi.__SESSION = AuthorizedSession(credentials)
+        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
+        # </hax>
         resp = fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
         return resp.json()
-
-        def skip_entry(*args, **kwargs):
-            return None
-        # define responses
-        #resp = fapi.get_entities_with_type(namespace=self.namespace.name, workspace=self.name)
-        # get entities == folders for tables
-        # canonical entities: sample, sample set, participant, participant set, pair set
-        #    unofficially canon: cohort
-        # https://support.terra.bio/hc/en-us/articles/360033913771-Understanding-Entity-Types
-        table_objects = {
-            "BigQuery_table": skip_entry,
-            "cohort": TableDataCohort,
-            "sample": skip_entry, #TODO implement
-            "sample_set": skip_entry, #TODO implement
-            "participant": skip_entry, #TODO implement
-            "participant_set": skip_entry, #TODO implement
-            "pair_set": skip_entry, #TODO implement
-            "": skip_entry
-        }
-        result = {
-            a.__name__ : [] for a in table_objects.values()
-        }
-        for _r in resp.json():
-            # sorting key: entityType
-            etype = _r["entityType"] # folder
-            tdo = None
-            try:
-                tdo = table_objects[etype](_r["name"], _r["attributes"])
-            except KeyError as ke:
-                pass
-                #TODO: generic handler
-            if tdo:
-                result[tdo.__class__.__name__].append(tdo)
-        return result

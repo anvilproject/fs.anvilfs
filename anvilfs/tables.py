@@ -6,7 +6,7 @@ from google.cloud import bigquery
 
 from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile
-
+from .workspace import WorkloadIdentityCredentials
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
@@ -90,6 +90,12 @@ class TableFolder(BaseAnVILFolder):
 
         
     def get_entity_info(self):
+        # <hax>
+        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
+        credentials = WorkloadIdentityCredentials(scopes=scopes)
+        fapi.__SESSION = AuthorizedSession(credentials)
+        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
+        # </hax>
         resp = fapi.get_entities(
             self.wsref.namespace.name, 
             self.wsref.name,
