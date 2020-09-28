@@ -5,47 +5,10 @@ from .workspace import Workspace
 from fs.base import FS
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 
-# specifically for the workload identity workaround
-import datetime
-from google.auth import credentials
-import json
-import firecloud.api as fapi
-from google.auth.transport.requests import AuthorizedSession
-
-class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
-  def __init__(self, scopes):
-    super(WorkloadIdentityCredentials, self).__init__()
-    print(f"Init with scopes={scopes}")
-    self._scopes = scopes
-  def with_scopes(self, scopes):
-    return WorkloadIdentityCredentials(scopes=scopes)
-  @property
-  def requires_scopes(self):
-    return False
-  def refresh(self, request):
-    print(f"Refresh with scopes={scopes}")
-    url = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'
-    if self._scopes:
-      url += '?scopes=' + ','.join(self._scopes)
-    response = request(url=url, method="GET", headers={'Metadata-Flavor': 'Google'})
-    if response.status == 200:
-      response_json = json.loads(response.data)
-    else:
-      raise RuntimeError('bad status from metadata server')
-    self.token = response_json['access_token']
-    self.expiry = datetime.datetime.utcnow() + datetime.timedelta(seconds=response_json['expires_in'])
-
-# end hack
 
 class AnVILFS(FS):
     def __init__(self, namespace, workspace):
         super(AnVILFS, self).__init__()
-        # <hax>
-        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
-        credentials = WorkloadIdentityCredentials(scopes=scopes)
-        fapi.__SESSION = AuthorizedSession(credentials)
-        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
-        # </hax>
         self.namespace = Namespace(namespace)
         self.workspace = self.namespace.fetch_workspace(workspace)
         self.rootobj = self.workspace # leaving the option to make namespace root

@@ -11,6 +11,37 @@ from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
 from .tables import RootTablesFolder, TableDataCohort
 
+# specifically for the workload identity workaround
+import datetime
+from google.auth import credentials
+import json
+from google.auth.transport.requests import AuthorizedSession
+
+class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
+  def __init__(self, scopes):
+    super(WorkloadIdentityCredentials, self).__init__()
+    print(f"Init with scopes={scopes}")
+    self._scopes = scopes
+  def with_scopes(self, scopes):
+    return WorkloadIdentityCredentials(scopes=scopes)
+  @property
+  def requires_scopes(self):
+    return False
+  def refresh(self, request):
+    print(f"Refresh with scopes={scopes}")
+    url = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'
+    if self._scopes:
+      url += '?scopes=' + ','.join(self._scopes)
+    response = request(url=url, method="GET", headers={'Metadata-Flavor': 'Google'})
+    if response.status == 200:
+      response_json = json.loads(response.data)
+    else:
+      raise RuntimeError('bad status from metadata server')
+    self.token = response_json['access_token']
+    self.expiry = datetime.datetime.utcnow() + datetime.timedelta(seconds=response_json['expires_in'])
+
+# end workaround
+
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):
         self.name = name
@@ -146,6 +177,12 @@ class Workspace(BaseAnVILFolder):
             resp.raise_for_status()
 
     def fetch_entity_info(self):
+        # <hax>
+        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
+        credentials = WorkloadIdentityCredentials(scopes=scopes)
+        fapi.__SESSION = AuthorizedSession(credentials)
+        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
+        # </hax>
         resp = fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
