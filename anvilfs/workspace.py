@@ -11,6 +11,7 @@ from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
 from .tables import RootTablesFolder, TableDataCohort
 
+from google.auth.transport.requests import AuthorizedSession
 
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):
