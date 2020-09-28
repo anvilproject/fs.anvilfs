@@ -5,13 +5,6 @@ from fs.enums import ResourceType
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
 
-# specifically for the workload identity workaround
-import datetime
-from google.auth import credentials
-import json
-import firecloud.api as fapi
-from google.auth.transport.requests import AuthorizedSession
-
 
 class BaseAnVILResource:
     def getinfo(self):

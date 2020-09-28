@@ -1,7 +1,6 @@
 from io import BytesIO
 from time import sleep
 
-import firecloud.api as fapi
 from google.cloud import bigquery
 
 from .base import BaseAnVILFile, BaseAnVILFolder
@@ -27,7 +26,8 @@ class TableEntriesFile(BaseAnVILFile):
 # terra 'entities' represent tables
 # #TODO: refactor to use entity types for lazy load                    
 class TableFolder(BaseAnVILFolder):
-    def __init__(self, etype, eid, attribs, wsref):
+    def __init__(self, etype, eid, attribs, wsref, fapi):
+        self.fapi = fapi
         self.name = etype + "/"
         super().__init__(self.name)
         self.type = etype
@@ -88,7 +88,7 @@ class TableFolder(BaseAnVILFolder):
             return None
 
         
-    def get_entity_info(self):
+    def get_entity_info(self, fapi):
         resp = fapi.get_entities(
             self.wsref.namespace.name, 
             self.wsref.name,
@@ -100,13 +100,13 @@ class TableFolder(BaseAnVILFolder):
 
 
 class RootTablesFolder(BaseAnVILFolder):
-    def __init__(self, einfo, wsref):
+    def __init__(self, einfo, wsref, fapi):
         self.name = "Tables/"
         super().__init__(self.name)
         for ename in einfo:
             attribs = einfo[ename]["attributeNames"]
             eid = einfo[ename]["idName"]
-            tf = TableFolder(ename, eid, attribs, wsref)
+            tf = TableFolder(ename, eid, attribs, wsref, fapi)
             self[tf.name] = tf
             # change this for laziness
             tf.make_contents()

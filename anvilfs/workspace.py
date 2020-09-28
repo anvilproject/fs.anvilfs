@@ -4,14 +4,13 @@ from os.path import commonprefix
 import re
 
 from google.cloud import storage
-import firecloud.api as fapi
 
 from .base import BaseAnVILFolder, BaseAnVILFile
 from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
 from .tables import RootTablesFolder, TableDataCohort
+from .workloadidentitycredentials import WorkloadIdentityCredentials
 
-from google.auth.transport.requests import AuthorizedSession
 
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):
@@ -36,16 +35,10 @@ class WorkspaceData(BaseAnVILFile):
         return self.buffer
 
 class Workspace(BaseAnVILFolder):
-    def __init__(self, namespace_reference,  workspace_name):
-        # <hax>
-        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
-        credentials = WorkloadIdentityCredentials(scopes=scopes)
-        fapi.__SESSION = AuthorizedSession(credentials)
-        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
-        # </hax>
+    def __init__(self, namespace_reference,  workspace_name, fapi):
         self.storage_client = storage.Client()
         self.namespace = namespace_reference
-        resp = self.fetch_api_info(workspace_name)
+        resp = self.fetch_api_info(workspace_name, fapi)
         self.bucket_name = resp["workspace"]["bucketName"]
         attributes = resp["workspace"]["attributes"]
         try:
@@ -53,7 +46,7 @@ class Workspace(BaseAnVILFolder):
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
         # Tables folder
-        table_baf = RootTablesFolder(self.fetch_entity_info(), self)
+        table_baf = RootTablesFolder(self.fetch_entity_info(fapi), self, fapi)
         self[table_baf.name] = table_baf
         # bucket folder
         bucket_baf = BaseAnVILFolder("Other Data/")
@@ -145,7 +138,7 @@ class Workspace(BaseAnVILFolder):
             "filename": subcomponents[-1]
         }
 
-    def fetch_api_info(self, workspace_name):
+    def fetch_api_info(self, workspace_name, fapi):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
         resp = fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
         if resp.status_code == 200:
@@ -153,7 +146,7 @@ class Workspace(BaseAnVILFolder):
         else:
             resp.raise_for_status()
 
-    def fetch_entity_info(self):
+    def fetch_entity_info(self, fapi):
         resp = fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
