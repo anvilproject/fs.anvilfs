@@ -6,11 +6,10 @@ import re
 from google.cloud import storage
 import firecloud.api as fapi
 
-from .base import BaseAnVILFolder, BaseAnVILFile
+from .base import BaseAnVILFolder, BaseAnVILFile, WorkloadIdentityCredentials
 from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
 from .tables import RootTablesFolder, TableDataCohort
-from .anvilfs import WorkloadIdentityCredentials
 
 
 class WorkspaceData(BaseAnVILFile):

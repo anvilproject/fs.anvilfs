@@ -4,9 +4,8 @@ from time import sleep
 import firecloud.api as fapi
 from google.cloud import bigquery
 
-from .base import BaseAnVILFile, BaseAnVILFolder
+from .base import BaseAnVILFile, BaseAnVILFolder, WorkloadIdentityCredentials
 from .google import GoogleAnVILFile
-from .anvilfs import WorkloadIdentityCredentials
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
