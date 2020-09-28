@@ -6,7 +6,7 @@ from google.cloud import bigquery
 
 from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile
-from .workspace import WorkloadIdentityCredentials
+from .anvilfs import WorkloadIdentityCredentials
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
