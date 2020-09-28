@@ -91,6 +91,7 @@ class TableFolder(BaseAnVILFolder):
 
         
     def get_entity_info(self):
+        print("i'm a fetchin entity info")
         # <hax>
         scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
         credentials = WorkloadIdentityCredentials(scopes=scopes)

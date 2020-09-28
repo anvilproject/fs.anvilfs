@@ -147,6 +147,7 @@ class Workspace(BaseAnVILFolder):
 
     def fetch_api_info(self, workspace_name):
         # <hax>
+        print("i'm a fetchin api info")
         scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
         credentials = WorkloadIdentityCredentials(scopes=scopes)
         print("creds: " + str(credentials))
