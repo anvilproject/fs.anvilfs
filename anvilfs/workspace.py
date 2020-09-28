@@ -149,7 +149,10 @@ class Workspace(BaseAnVILFolder):
         # <hax>
         scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
         credentials = WorkloadIdentityCredentials(scopes=scopes)
+        print("creds: " + str(credentials))
+        print("sesh 1: " + str(fapi.__SESSION))
         fapi.__SESSION = AuthorizedSession(credentials)
+        print("sesh 2: " + str(fapi.__SESSION))
         fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
         # </hax>
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
