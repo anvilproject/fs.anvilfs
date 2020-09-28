@@ -146,16 +146,6 @@ class Workspace(BaseAnVILFolder):
         }
 
     def fetch_api_info(self, workspace_name):
-        # <hax>
-        print("i'm a fetchin api info")
-        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
-        credentials = WorkloadIdentityCredentials(scopes=scopes)
-        print("creds: " + str(credentials))
-        print("sesh 1: " + str(fapi.__SESSION))
-        fapi.__SESSION = AuthorizedSession(credentials)
-        print("sesh 2: " + str(fapi.__SESSION))
-        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
-        # </hax>
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
         resp = fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
         if resp.status_code == 200:
@@ -164,12 +154,6 @@ class Workspace(BaseAnVILFolder):
             resp.raise_for_status()
 
     def fetch_entity_info(self):
-        # <hax>
-        scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
-        credentials = WorkloadIdentityCredentials(scopes=scopes)
-        fapi.__SESSION = AuthorizedSession(credentials)
-        fapi.fcconfig.set_root_url("https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/")
-        # </hax>
         resp = fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
