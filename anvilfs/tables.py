@@ -7,6 +7,7 @@ from google.cloud import bigquery
 from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile
 
+
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
         self.name = name
@@ -65,7 +66,11 @@ class TableFolder(BaseAnVILFolder):
                         # check if its a linkable file
                         efiletype = self.is_linkable_file(val)
                         if efiletype:
-                            linked_files.append(efiletype(val, self.wsref.storage_client))
+                            _r = efiletype(val, self.wsref.storage_client)
+                            if type(_r) == list:
+                                linked_files.extend(_r)
+                            else:
+                                linked_files.append(_r)
                 base_table[attr].append(addendum)
             # if there are links, make them externally available by entityname_filename.tsv
         linked_files.append(TableEntriesFile(self.type + "_contents.tsv", base_table))
@@ -76,6 +81,7 @@ class TableFolder(BaseAnVILFolder):
         protocol = fname.split("://")[0]
         allowed_protocols = {
             "gs": GoogleAnVILFile,
+            "drs": GoogleAnVILFile.drsmaker
         }
         if protocol in allowed_protocols:
             return allowed_protocols[protocol]
