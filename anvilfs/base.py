@@ -23,7 +23,7 @@ class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
   def requires_scopes(self):
     return False
   def refresh(self, request):
-    print(f"Refresh with scopes={scopes}")
+    print(f"Refresh with scopes={self._scopes}")
     url = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'
     if self._scopes:
       url += '?scopes=' + ','.join(self._scopes)
