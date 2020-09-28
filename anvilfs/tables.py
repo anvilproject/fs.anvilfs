@@ -6,7 +6,7 @@ from google.cloud import bigquery
 
 from google.auth.transport.requests import AuthorizedSession
 
-from .base import BaseAnVILFile, BaseAnVILFolder, WorkloadIdentityCredentials
+from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile
 
 class TableEntriesFile(BaseAnVILFile):
