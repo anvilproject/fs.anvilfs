@@ -1,14 +1,12 @@
 from io import BytesIO
 
-from google.cloud import storage
-
 from .base import BaseAnVILFolder, BaseAnVILFile
 
 class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
         super().__init__("Files")
         self.bucket_name = bucket_name
-        google_bucket = storage.Client().get_bucket(bucket_name)
+        google_bucket = self.gc_storage_client.get_bucket(bucket_name)
         blobs = google_bucket.list_blobs()
         for blob in blobs:
             self.insert_file(blob)

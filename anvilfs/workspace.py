@@ -3,12 +3,11 @@ from os import SEEK_END, SEEK_SET
 from os.path import commonprefix
 import re
 
-from google.cloud import storage
-import firecloud.api as fapi
-
 from .base import BaseAnVILFolder, BaseAnVILFile
 from .bucket import WorkspaceBucket
 from .reference import ReferenceDataFile, ReferenceDataFolder
+from .tables import RootTablesFolder, TableDataCohort
+from .workloadidentitycredentials import WorkloadIdentityCredentials
 
 
 class WorkspaceData(BaseAnVILFile):
@@ -35,7 +34,6 @@ class WorkspaceData(BaseAnVILFile):
 
 class Workspace(BaseAnVILFolder):
     def __init__(self, namespace_reference,  workspace_name):
-        self.storage_client = storage.Client()
         self.namespace = namespace_reference
         resp = self.fetch_api_info(workspace_name)
         self.bucket_name = resp["workspace"]["bucketName"]
@@ -44,6 +42,9 @@ class Workspace(BaseAnVILFolder):
             super().__init__(workspace_name, resp["workspace"]["lastModified"])
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
+        # Tables folder
+        table_baf = RootTablesFolder(self.fetch_entity_info(), self)
+        self[table_baf.name] = table_baf
         # bucket folder
         bucket_baf = BaseAnVILFolder("Other Data/")
         self[bucket_baf.name] = bucket_baf
@@ -104,7 +105,7 @@ class Workspace(BaseAnVILFolder):
             gs_pfx = f"gs://{bucket}/"
             pfxs = [x[len(gs_pfx):] for x in google_buckets[bucket]]
             prefix = commonprefix(pfxs)
-            blobs = self.storage_client.list_blobs(bucket, prefix=prefix)
+            blobs = self.gc_storage_client.list_blobs(bucket, prefix=prefix)
             for blob in blobs:
                 url = gs_pfx + blob.name
                 url_to_blob[url] = blob
@@ -136,8 +137,14 @@ class Workspace(BaseAnVILFolder):
 
     def fetch_api_info(self, workspace_name):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
-        resp = fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
+        resp = self.fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
         if resp.status_code == 200:
             return resp.json()
         else:
             resp.raise_for_status()
+
+    def fetch_entity_info(self):
+        resp = self.fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
+        if resp.status_code != 200:
+            resp.raise_for_status()
+        return resp.json()

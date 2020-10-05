@@ -149,8 +149,9 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
             'firecloud>=0.16.29',
+            'fs',
             'google-cloud-storage',
-            'fs'
+            'google-cloud-bigquery'
       ],
 
     # List additional groups of dependencies here (e.g. development

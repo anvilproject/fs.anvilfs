@@ -1,0 +1,4 @@
+firecloud>=0.16.29
+fs
+google-cloud-storage
+google-cloud-bigquery

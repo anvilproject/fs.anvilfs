@@ -1,8 +1,34 @@
+from io import BytesIO
+from os import SEEK_END, SEEK_SET
+
 from fs.enums import ResourceType
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
 
-class BaseAnVILResource:
+import firecloud.api as fapi
+from google.cloud import storage
+from google.cloud import bigquery
+
+
+class ClientRepository:
+
+    _refs = {
+        "fapi": fapi,
+        "gc_storage_client": None,
+        "gc_bigquery_client": None
+    }
+    _ref_inits = {
+        "gc_storage_client": storage.Client,
+        "gc_bigquery_client": bigquery.Client
+    }
+
+    def __getattr__(self, ref):
+        if not self._refs[ref]:
+            self._refs[ref] = self._ref_inits[ref]()
+        return self._refs[ref]
+
+
+class BaseAnVILResource(ClientRepository):
     def getinfo(self):
         raise NotImplementedError("Method getinfo() not implemented")
     
@@ -38,7 +64,15 @@ class BaseAnVILFile(BaseAnVILResource):
             }
         }
         return Info(result)
-    
+
+    def string_to_buffer(self,string):
+        buffer = BytesIO(string.encode('utf-8'))
+        position = buffer.tell()
+        buffer.seek(0, SEEK_END)
+        self.size = buffer.tell()
+        buffer.seek(position, SEEK_SET)
+        return buffer
+
     def get_bytes_handler(self):
         raise NotImplementedError("Method get_bytes_handler() not implemented")
 
