@@ -85,7 +85,7 @@ class DRSAnVILFile(GoogleAnVILFile):
         # subfunction for threads
         def _load_url(drsuri, timeout):
             token = ClientRepository().get_fapi_token()
-            url = 'https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3'
+            url = cls.api_url
             r = requests.post(
                     url,
                     data = {
@@ -109,7 +109,7 @@ class DRSAnVILFile(GoogleAnVILFile):
                     url = future_to_url[future]
                     try:
                         data = future.result()
-                        if "status_code" not in data or data.status_code != 200 or "gsUri" not in data:
+                        if "gsUri" not in data:
                             print(f"DRS resolution error - received:\n\t{data}")
                             bad_uris.append(url)
                         else:
