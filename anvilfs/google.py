@@ -108,7 +108,11 @@ class DRSAnVILFile(GoogleAnVILFile):
                     url = future_to_url[future]
                     try:
                         data = future.result()
-                        good_data.append(data)
+                        if "status_code" not in data or data.status_code != 200 or "gsUri" not in data:
+                            print(f"DRS resolution error - received:\n\t{data}")
+                            bad_uris.append(url)
+                        else:
+                            good_data.append(data)
                     except Exception as exc:
                         print('%r generated an exception: %s' % (url, exc))
                         raise exc

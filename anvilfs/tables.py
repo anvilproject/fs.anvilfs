@@ -75,7 +75,6 @@ class TableFolder(BaseAnVILFolder):
             except Exception as e:
                 print(f"AnVILFS ERROR: SKIPPING FILE, could not be resolved due to the following error:")
                 print(e)
-                raise e
                 continue
         # if there are links, make them externally available by entityname_filename.tsv
         linked_files.append(TableEntriesFile(self.type + "_contents.tsv", base_table))
