@@ -60,11 +60,12 @@ class GoogleAnVILFile(BaseAnVILFile):
         return buff
 
 class DRSAnVILFile(GoogleAnVILFile):
+    api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
 
     def __init__(self, input):
         token = ClientRepository().get_fapi_token()
         #api_prefix = "https://dataguids.org/ga4gh/dos/v1/dataobjects/" <- old news
-        api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
+        api_url = self.api_url
         #apistring = api_prefix + drsurl[len("drs://"):]
         response = requests.post(
             api_url,

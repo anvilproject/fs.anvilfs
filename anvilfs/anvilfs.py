@@ -1,4 +1,5 @@
 from .base import BaseAnVILFolder, ClientRepository
+from .google import DRSAnVILFile
 from .namespace import Namespace
 from .workspace import Workspace
 from .workloadidentitycredentials import WorkloadIdentityCredentials
@@ -18,6 +19,8 @@ class AnVILFS(FS, ClientRepository):
         ClientRepository.base_project = namespace
         if not api_url:
             api_url = self.DEFAULT_API_URL
+        if drs_url:
+            DRSAnVILFile.api_url = drs_url
         if on_anvil:
             scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
