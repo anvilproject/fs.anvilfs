@@ -105,7 +105,9 @@ class Workspace(BaseAnVILFolder):
             gs_pfx = f"gs://{bucket}/"
             pfxs = [x[len(gs_pfx):] for x in google_buckets[bucket]]
             prefix = commonprefix(pfxs)
-            blobs = self.gc_storage_client.list_blobs(bucket, prefix=prefix)
+            uproj = self.gc_storage_client.project
+            _bucket = self.gc_storage_client.bucket(bucket, user_project=uproj)
+            blobs = self.gc_storage_client.list_blobs(_bucket, prefix=prefix)
             for blob in blobs:
                 url = gs_pfx + blob.name
                 url_to_blob[url] = blob

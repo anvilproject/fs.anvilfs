@@ -37,6 +37,7 @@ class TableFolder(BaseAnVILFolder):
             name: [] for name in self.attribs
         }
         linked_files = []
+        file_links = {}
         # get remote info
         resp = self.get_entity_info()
         for entry in resp:
@@ -61,14 +62,22 @@ class TableFolder(BaseAnVILFolder):
                         addendum = val
                         # check if its a linkable file
                         efiletype = self.is_linkable_file(val)
-                        if efiletype:
-                            _r = efiletype(val)
-                            if type(_r) == list:
-                                linked_files.extend(_r)
-                            else:
-                                linked_files.append(_r)
+                        if efiletype is not None:
+                            if efiletype not in file_links:
+                                file_links[efiletype] = []
+                            file_links[efiletype].append(val)
                 base_table[attr].append(addendum)
-            # if there are links, make them externally available by entityname_filename.tsv
+        
+        for method in file_links:
+            try:
+                fresh_files = method.factory(file_links[method])
+                linked_files.extend(fresh_files)
+            except Exception as e:
+                print(f"AnVILFS ERROR: SKIPPING FILE, could not be resolved due to the following error:")
+                print(e)
+                raise e
+                continue
+        # if there are links, make them externally available by entityname_filename.tsv
         linked_files.append(TableEntriesFile(self.type + "_contents.tsv", base_table))
         for f in linked_files:
             self[f.name] = f

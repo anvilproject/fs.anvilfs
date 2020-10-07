@@ -12,14 +12,15 @@ from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 class AnVILFS(FS, ClientRepository):
     DEFAULT_API_URL = "https://api.firecloud.org/api/"
     #DEV_API_URL="https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/"
-    GalaxyOnAnVIL = False
-    def __init__(self, namespace, workspace, api_url=None, on_anvil=False):
+    def __init__(self, namespace, workspace, api_url=None, on_anvil=False, drs_url=None):
         super(AnVILFS, self).__init__()
+        ClientRepository.base_project = namespace
         if not api_url:
             api_url = self.DEFAULT_API_URL
         if on_anvil:
             scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
+
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
             self.fapi.fcconfig.set_root_url(api_url)
         # /hax

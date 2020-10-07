@@ -1,31 +1,57 @@
 import requests
 import json
 from io import BytesIO
+import concurrent.futures
 
 from google.auth import credentials
+from google.cloud import storage
 
-from .base import BaseAnVILFile
+from .base import BaseAnVILFile, ClientRepository
 
 class GoogleAnVILFile(BaseAnVILFile):
-    def __init__(self, url):
-        _split = url[len("gs://"):].split("/")
-        self.name = _split[-1]
-        filepath = "/".join(_split[1:])
-        blobs = self.gc_storage_client.list_blobs(_split[0], prefix=filepath) 
-        #buck = self.client.get_bucket(_split[0])
-        self.blob = None
-        self.size = None
-        self.last_modified = None
-        for b in blobs:
-            if b.name == filepath:
-                self.blob = b
-                self.size = b.size
-                self.last_modified = b.updated
-                break
-        if not self.blob and not self.size and not self.last_modified:
-            raise Exception(f"blob '{self.name}' not found...")
+    def __init__(self, input):
+        if type(input) == str and input.startswith("gs://"):
+            #normal
+            url = input
+            _split = url[len("gs://"):].split("/")
+            self.name = _split[-1]
+            filepath = "/".join(_split[1:])
+            self.blob = self.info_to_blob(_split[0], filepath)
+            self.blob.reload()
+            self.size = self.blob.size
+            self.last_modified = self.blob.updated
+            # blobs = self.gc_storage_client.list_blobs(_bucket, prefix=filepath)
+            # #buck = self.client.get_bucket(_split[0])
+            # self.blob = None
+            # self.size = None
+            # self.last_modified = None
+            # for b in blobs:
+            #     if b.name == filepath:
+            #         self.blob = b
+            #         self.size = b.size
+            #         self.last_modified = b.updated
+            #         break
+            # if not self.blob and not self.size and not self.last_modified:
+            #     raise Exception(f"blob '{self.name}' not found...")
+        elif type(input) == dict:
+            self.name = input["name"]
+            self.blob = self.info_to_blob(input["bucket"], input["path"])
+            self.size = input["size"]
+            self.last_modified = input["last_modified"]
         #self.blob = buck.get_blob("/".join(_split[1:]))
-        
+    
+    @classmethod
+    def factory(cls, gslist):
+        results = []
+        for item in gslist:
+            results.append(GoogleAnVILFile(item))
+        return results
+
+    def info_to_blob(self, source_bucket, path):
+        # requires project, bucket_name, prefix
+        uproj = self.gc_storage_client.project
+        bucket = self.gc_storage_client.bucket(source_bucket, user_project=uproj)
+        return storage.blob.Blob(path, bucket)
 
     def get_bytes_handler(self):
         buff = BytesIO()
@@ -35,18 +61,15 @@ class GoogleAnVILFile(BaseAnVILFile):
 
 class DRSAnVILFile(GoogleAnVILFile):
 
-    def __init__(self, drsurl):
-        sesh = self.fapi.__getattribute__("__SESSION")
-        if not sesh or not sesh.credentials.valid:
-            self.fapi._set_session()
-        token = self.fapi.__getattribute__("__SESSION").credentials.token
+    def __init__(self, input):
+        token = ClientRepository().get_fapi_token()
         #api_prefix = "https://dataguids.org/ga4gh/dos/v1/dataobjects/" <- old news
         api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
         #apistring = api_prefix + drsurl[len("drs://"):]
         response = requests.post(
             api_url,
             data = {
-                "url": drsurl
+                "url": input
             },
             headers = {
                 "Authorization": f"Bearer {token}"
@@ -56,3 +79,63 @@ class DRSAnVILFile(GoogleAnVILFile):
         gurl = result["gsUri"]
         super().__init__(gurl)
 
+    @classmethod
+    def factory(cls, drslist):
+        # subfunction for threads
+        def _load_url(drsuri, timeout):
+            token = ClientRepository().get_fapi_token()
+            url = 'https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3'
+            r = requests.post(
+                    url,
+                    data = {
+                    "url":drsuri
+                    },
+                    headers = {
+                        "Authorization": f"Bearer {token}"
+                    }
+                )
+            return json.loads(r.text)
+        # thread pool maker
+        def _pooler(inlist, maxworks=50):
+            timeout = 60#seconds
+            good_data = []
+            bad_uris = []
+            # We can use a with statement to ensure threads are cleaned up promptly
+            with concurrent.futures.ThreadPoolExecutor(max_workers=maxworks) as executor:
+                # Start the load operations and mark each future with its URL
+                future_to_url = {executor.submit(_load_url, url, timeout): url for url in inlist}
+                for future in concurrent.futures.as_completed(future_to_url):
+                    url = future_to_url[future]
+                    try:
+                        data = future.result()
+                        good_data.append(data)
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (url, exc))
+                        raise exc
+                        bad_uris.append(url)
+                    else:
+                        pass
+            return good_data, bad_uris
+
+        # first pass
+        file_objects = []
+        good, bad = _pooler(drslist)
+        # retry
+        good_retries, bad_retries = _pooler(bad)
+        if bad_retries:
+            print(f"Unable to resolve the following URIs:\n{bad_retries}")
+        total_goods = good + good_retries
+        gs_info = [
+            {
+                "gsUri": x["gsUri"],
+                "bucket": x["bucket"],
+                "path": x["name"],
+                "size": x["size"],
+                "name": x["fileName"],
+                "last_modified": x["timeUpdated"]
+            } 
+            for x in total_goods]
+        # make google bucket objects
+        for item in gs_info:
+            file_objects.append(GoogleAnVILFile(item))
+        return file_objects
