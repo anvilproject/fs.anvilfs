@@ -3,6 +3,7 @@ from time import sleep
 
 from .base import BaseAnVILFile, BaseAnVILFolder
 from .google import GoogleAnVILFile, DRSAnVILFile
+from .hypertext import HypertextAnVILFile
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
@@ -85,7 +86,9 @@ class TableFolder(BaseAnVILFolder):
         protocol = fname.split("://")[0]
         allowed_protocols = {
             "gs": GoogleAnVILFile,
-            "drs": DRSAnVILFile
+            "drs": DRSAnVILFile,
+            "http": HypertextAnVILFile,
+            "https": HypertextAnVILFile
         }
         if protocol in allowed_protocols:
             return allowed_protocols[protocol]

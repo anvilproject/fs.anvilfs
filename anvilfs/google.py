@@ -101,7 +101,6 @@ class DRSAnVILFile(GoogleAnVILFile):
             timeout = 60#seconds
             good_data = []
             bad_uris = []
-            # We can use a with statement to ensure threads are cleaned up promptly
             with concurrent.futures.ThreadPoolExecutor(max_workers=maxworks) as executor:
                 # Start the load operations and mark each future with its URL
                 future_to_url = {executor.submit(_load_url, url, timeout): url for url in inlist}
