@@ -1,13 +1,55 @@
 from io import BytesIO
+from os import SEEK_END, SEEK_SET
+
+import re
 
 from .base import BaseAnVILFolder, BaseAnVILFile
+
+class OtherDataFolder(BaseAnVILFolder):
+    def __init__(self, attributes, bucket_name):
+        super().__init__("Other Data")
+        self.bucket_name = bucket_name
+        self.attributes = attributes
+
+    def lazy_init(self):
+        workspacedata = dict(self.attributes)
+        blocklist_prefixes = [
+            "referenceData_",
+            "description"
+        ]
+        for datum in self.attributes:
+            for blocked in blocklist_prefixes:
+                if datum.startswith(blocked):
+                    del workspacedata[datum]
+        if workspacedata:
+            _wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
+            self[_wsd.name] = _wsd
+        _wsb = WorkspaceBucket(self.bucket_name)
+        self[_wsb.name] = _wsb
+
+class WorkspaceBucketSubFolder(BaseAnVILFolder):
+    def __init__(self, name, remaining, initializing_blob):
+        super().__init__(name)
+        self.remaining = remaining
+        self.initializing_blob = initializing_blob
+
+    def lazy_init(self):
+        if len(remaining) == 1:
+            self[remaining[0]] = WorkspaceBucketFile(initializing_blob)
+            del self.initializing_blob
+        else:
+            subname = remaining[0] + '/'
+            self[subname] = WorkspaceBucketSubFolder(subname, remaining[1:], initializing_blob)
 
 class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
         super().__init__("Files")
         self.bucket_name = bucket_name
-        google_bucket = self.gc_storage_client.get_bucket(bucket_name)
+
+    def lazy_init(self):
+        google_bucket = self.gc_storage_client.get_bucket(self.bucket_name)
         blobs = google_bucket.list_blobs()
+        self.initialized = True
         for blob in blobs:
             self.insert_file(blob)
 
@@ -20,18 +62,21 @@ class WorkspaceBucket(BaseAnVILFolder):
         if len(s) == 1:
             _wsbf = WorkspaceBucketFile(bucket_blob)
             self[_wsbf.name] = _wsbf
-        # get to underlying folder
-        base = self
-        for sub in s[:-1]:
-            try:
-                base = base[sub+"/"]
-            except KeyError:
-                baf = BaseAnVILFolder(sub+"/") 
-                base[baf.name] = baf
-                base = baf
-        # now to insert the final object
-        _wsbf = WorkspaceBucketFile(bucket_blob)
-        base[_wsbf.name] = _wsbf
+        else:
+            subname = s[0]+'/'
+            self[subname] = WorkspaceBucketSubFolder(subname, s[1:], bucket_blob)
+        # # get to underlying folder
+        # base = self
+        # for sub in s[:-1]:
+        #     try:
+        #         base = base[sub+"/"]
+        #     except KeyError:
+        #         baf = BaseAnVILFolder(sub+"/") 
+        #         base[baf.name] = baf
+        #         base = baf
+        # # now to insert the final object
+        # _wsbf = WorkspaceBucketFile(bucket_blob)
+        # base[_wsbf.name] = _wsbf
 
 
 class WorkspaceBucketFile(BaseAnVILFile):
@@ -47,3 +92,25 @@ class WorkspaceBucketFile(BaseAnVILFile):
         self.blob_handle.download_to_file(buffer)
         buffer.seek(0)
         return buffer
+
+class WorkspaceData(BaseAnVILFile):
+    def __init__(self, name, data_dict):
+        self.name = name
+        self.buffer = self._dict_to_buffer(data_dict)
+        self.last_modified = None
+    
+    def _dict_to_buffer(self, d):
+        # only keys that match the below regex are valid 
+        keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
+        data = ""
+        for k in keys:
+            data += f"{k}\t{d[k]}\n"
+        buffer = BytesIO(data.encode('utf-8'))
+        position = buffer.tell()
+        buffer.seek(0, SEEK_END)
+        self.size = buffer.tell()
+        buffer.seek(position, SEEK_SET)
+        return buffer
+
+    def get_bytes_handler(self):
+        return self.buffer

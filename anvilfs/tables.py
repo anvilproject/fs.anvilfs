@@ -22,8 +22,25 @@ class TableEntriesFile(BaseAnVILFile):
     def get_bytes_handler(self):
         return self.string_to_buffer(self.buffstr)
 
+
+class RootTablesFolder(BaseAnVILFolder):
+    def __init__(self, einfo, wsref):
+        self.name = "Tables/"
+        self.einfo = einfo
+        self.wsref = wsref
+        super().__init__(self.name)
+
+    def lazy_init(self):
+        for ename in self.einfo:
+            attribs = self.einfo[ename]["attributeNames"]
+            eid = self.einfo[ename]["idName"]
+            tf = TableFolder(ename, eid, attribs, self.wsref)
+            self[tf.name] = tf
+            # change this for laziness
+            #tf.make_contents()
+
+
 # terra 'entities' represent tables
-# #TODO: refactor to use entity types for lazy load                    
 class TableFolder(BaseAnVILFolder):
     def __init__(self, etype, eid, attribs, wsref):
         self.name = etype + "/"
@@ -32,6 +49,9 @@ class TableFolder(BaseAnVILFolder):
         self.eid = eid
         self.wsref = wsref
         self.attribs = attribs # column names
+    
+    def lazy_init(self):
+        self.make_contents()
 
     def make_contents(self):
         base_table = {
@@ -106,18 +126,6 @@ class TableFolder(BaseAnVILFolder):
         else:
             resp.raise_for_status()
 
-
-class RootTablesFolder(BaseAnVILFolder):
-    def __init__(self, einfo, wsref):
-        self.name = "Tables/"
-        super().__init__(self.name)
-        for ename in einfo:
-            attribs = einfo[ename]["attributeNames"]
-            eid = einfo[ename]["idName"]
-            tf = TableFolder(ename, eid, attribs, wsref)
-            self[tf.name] = tf
-            # change this for laziness
-            tf.make_contents()
 
 
 class TableDataCohort(BaseAnVILFile):

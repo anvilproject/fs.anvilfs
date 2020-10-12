@@ -11,7 +11,6 @@ from google.cloud import bigquery
 
 
 class ClientRepository:
-
     base_project = None
 
     _refs = {
@@ -89,12 +88,28 @@ class BaseAnVILFile(BaseAnVILResource):
 
 class BaseAnVILFolder(BaseAnVILResource):
     def __init__(self, name, last_modified=None):
+        print(f"super {self.__class__.__name__}.{name}")
+        self.initialized = False
         if name[-1] != "/": # required since anvil supports names the same as their containing directories
             self.name = name + "/"
         else:
             self.name = name
         self.last_modified = last_modified
         self.children = {}
+    
+    def lazily_init(fn):
+        def lazywrapper(*args, **kwargs):
+            self = args[0]
+            print(f"lazy init {self.__class__.__name__}.{self.name}.{fn.__name__}({args},{kwargs})? {self.initialized}")
+            if not self.initialized:
+                self.lazy_init()
+                self.initialized = True
+            return fn(*args, **kwargs)
+        return lazywrapper
+
+
+    def lazy_init(self):
+        raise NotImplementedError(f"{self.__class__.__name__}.lazy_init method is abstract and must be specified")
 
     def __hash__(self):
         return hash((self.name, self.__class__.__name__, self.last_modified))
@@ -103,20 +118,26 @@ class BaseAnVILFolder(BaseAnVILResource):
         return (self.name, self.last_modified) == (other.name, other.last_modified)
 
     # allow dictionary-style access, with possible objs as keys
+    @lazily_init
     def __getitem__(self, key):
+        print(f"getitem: {key}")
         return self.children[key]
 
     # allow for <item> in :
     def __iter__(self):
         return iter(self.children)
 
+    @lazily_init
     def keys(self):
+        print(f"gettin keys for {self.name}...")
         def sorter(k):
             if k[-1] == "/":
                 k = "0"+k
             return k
+        print(f"CKs: {self.children.keys()}")
         return sorted([k for k in self.children.keys()], key=sorter)
 
+    @lazily_init
     def get_object_from_path(self, path):
         if path == "/" or path == "":
             return self

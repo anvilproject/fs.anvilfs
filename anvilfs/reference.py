@@ -6,6 +6,8 @@ from .base import BaseAnVILFolder, BaseAnVILFile
 class ReferenceDataFolder(BaseAnVILFolder):
     def __init__(self, name, refs):
         super().__init__(name)
+    
+    def lazy_init(self):
         self.init_references(refs)
 
     def init_references(self, refs):
