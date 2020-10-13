@@ -21,7 +21,7 @@ class BaseAnVILFolder(BaseAnVILResource):
     def lazily_init(fn):
         def lazywrapper(*args, **kwargs):
             self = args[0]
-            print(f"lazy init <{self.__class__.__name__} \"{self.name}\">.{fn.__name__}({args},{kwargs})? {self.initialized}")
+            #DEBUGGERY#print(f"lazy init <{self.__class__.__name__} \"{self.name}\">.{fn.__name__}({args},{kwargs})? {self.initialized}")
             if not self.initialized:
                 self.lazy_init()
                 self.initialized = True
