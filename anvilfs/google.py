@@ -6,7 +6,8 @@ import concurrent.futures
 from google.auth import credentials
 from google.cloud import storage
 
-from .base import BaseAnVILFile, ClientRepository
+from .basefile import BaseAnVILFile
+from .clientrepository import ClientRepository
 
 class GoogleAnVILFile(BaseAnVILFile):
     def __init__(self, input):

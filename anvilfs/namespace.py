@@ -1,4 +1,4 @@
-from .base import BaseAnVILFolder
+from .basefolder import BaseAnVILFolder
 from .workspace import Workspace
 
 class Namespace(BaseAnVILFolder):

@@ -3,7 +3,8 @@ from os import SEEK_END, SEEK_SET
 
 import re
 
-from .base import BaseAnVILFolder, BaseAnVILFile
+from .basefile import BaseAnVILFile
+from .basefolder import BaseAnVILFolder
 
 class OtherDataFolder(BaseAnVILFolder):
     def __init__(self, attributes, bucket_name):
@@ -22,10 +23,40 @@ class OtherDataFolder(BaseAnVILFolder):
                 if datum.startswith(blocked):
                     del workspacedata[datum]
         if workspacedata:
-            _wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
-            self[_wsd.name] = _wsd
+            wsdf = WorkspaceDataFolder(workspacedata)
+            #_wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
+            self[wsdf.name] = wsdf
         _wsb = WorkspaceBucket(self.bucket_name)
         self[_wsb.name] = _wsb
+
+
+class WorkspaceDataFolder(BaseAnVILFolder):
+    def __init__(self, workspacedata):
+        super().__init__("Workspace Data")
+        self.workspacedata = workspacedata
+
+    def lazy_init(self):
+        files = {}
+        for k in self.workspacedata:
+            val = self.workspacedata[k]
+            filetype = self.is_linkable_file(val)
+            if filetype is not None:
+                if filetype not in files:
+                    files[filetype] = []
+                files[filetype].append(val)
+        linked_files = []
+        for method in files:
+            try:
+                fresh_files = method.factory(files[method])
+                linked_files.extend(fresh_files)
+            except Exception as e:
+                print(f"AnVILFS ERROR: SKIPPING FILE, could not be resolved due to the following error:")
+                print(e)
+                continue
+        linked_files.append(WorkspaceData("WorkspaceData.tsv", self.workspacedata))
+        for f in linked_files:
+            self[f.name] = f
+
 
 class WorkspaceBucketSubFolder(BaseAnVILFolder):
     def __init__(self, name, remaining, initializing_blob):
@@ -34,12 +65,12 @@ class WorkspaceBucketSubFolder(BaseAnVILFolder):
         self.initializing_blob = initializing_blob
 
     def lazy_init(self):
-        if len(remaining) == 1:
-            self[remaining[0]] = WorkspaceBucketFile(initializing_blob)
+        if len(self.remaining) == 1:
+            self[self.remaining[0]] = WorkspaceBucketFile(self.initializing_blob)
             del self.initializing_blob
         else:
-            subname = remaining[0] + '/'
-            self[subname] = WorkspaceBucketSubFolder(subname, remaining[1:], initializing_blob)
+            subname = self.remaining[0] + '/'
+            self[subname] = WorkspaceBucketSubFolder(subname, self.remaining[1:], self.initializing_blob)
 
 class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
@@ -65,18 +96,6 @@ class WorkspaceBucket(BaseAnVILFolder):
         else:
             subname = s[0]+'/'
             self[subname] = WorkspaceBucketSubFolder(subname, s[1:], bucket_blob)
-        # # get to underlying folder
-        # base = self
-        # for sub in s[:-1]:
-        #     try:
-        #         base = base[sub+"/"]
-        #     except KeyError:
-        #         baf = BaseAnVILFolder(sub+"/") 
-        #         base[baf.name] = baf
-        #         base = baf
-        # # now to insert the final object
-        # _wsbf = WorkspaceBucketFile(bucket_blob)
-        # base[_wsbf.name] = _wsbf
 
 
 class WorkspaceBucketFile(BaseAnVILFile):
@@ -92,6 +111,7 @@ class WorkspaceBucketFile(BaseAnVILFile):
         self.blob_handle.download_to_file(buffer)
         buffer.seek(0)
         return buffer
+
 
 class WorkspaceData(BaseAnVILFile):
     def __init__(self, name, data_dict):

@@ -1,11 +1,12 @@
 from io import BytesIO
 from os.path import commonprefix
 
-from .base import BaseAnVILFolder, BaseAnVILFile
-from .bucket import OtherDataFolder, WorkspaceBucket
+from .basefile import BaseAnVILFile
+from .basefolder import BaseAnVILFolder
 from .reference import ReferenceDataFile, ReferenceDataFolder
-from .tables import RootTablesFolder, TableDataCohort
+from .tables import RootTablesFolder
 from .workloadidentitycredentials import WorkloadIdentityCredentials
+from .workspacebucket import OtherDataFolder, WorkspaceBucket
 
 
 # class WorkspaceData(BaseAnVILFile):

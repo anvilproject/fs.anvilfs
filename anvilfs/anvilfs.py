@@ -1,4 +1,5 @@
-from .base import BaseAnVILFolder, ClientRepository
+from .clientrepository import ClientRepository
+from .basefolder import BaseAnVILFolder
 from .google import DRSAnVILFile
 from .namespace import Namespace
 from .workspace import Workspace

@@ -1,9 +1,9 @@
 from io import BytesIO
 from time import sleep
 
-from .base import BaseAnVILFile, BaseAnVILFolder
-from .google import GoogleAnVILFile, DRSAnVILFile
-from .hypertext import HypertextAnVILFile
+from .basefile import BaseAnVILFile
+from .basefolder import BaseAnVILFolder
+
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
@@ -36,8 +36,6 @@ class RootTablesFolder(BaseAnVILFolder):
             eid = self.einfo[ename]["idName"]
             tf = TableFolder(ename, eid, attribs, self.wsref)
             self[tf.name] = tf
-            # change this for laziness
-            #tf.make_contents()
 
 
 # terra 'entities' represent tables
@@ -102,18 +100,18 @@ class TableFolder(BaseAnVILFolder):
         for f in linked_files:
             self[f.name] = f
 
-    def is_linkable_file(self, fname):
-        protocol = fname.split("://")[0]
-        allowed_protocols = {
-            "gs": GoogleAnVILFile,
-            "drs": DRSAnVILFile,
-            "http": HypertextAnVILFile,
-            "https": HypertextAnVILFile
-        }
-        if protocol in allowed_protocols:
-            return allowed_protocols[protocol]
-        else:
-            return None
+    # def is_linkable_file(self, fname):
+    #     protocol = fname.split("://")[0]
+    #     allowed_protocols = {
+    #         "gs": GoogleAnVILFile,
+    #         "drs": DRSAnVILFile,
+    #         "http": HypertextAnVILFile,
+    #         "https": HypertextAnVILFile
+    #     }
+    #     if protocol in allowed_protocols:
+    #         return allowed_protocols[protocol]
+    #     else:
+    #         return None
 
         
     def get_entity_info(self):
