@@ -6,6 +6,8 @@ import concurrent.futures
 from google.auth import credentials
 from google.cloud import storage
 
+import gs_chunked_io as gscio
+
 from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 
@@ -50,16 +52,18 @@ class GoogleAnVILFile(BaseAnVILFile):
 
     def info_to_blob(self, source_bucket, path):
         # requires project, bucket_name, prefix
-        chunk_size = 10485760 # 10MB
+        kb = 1024
+        mb = 1024*kb
+        chunk_size = 200*mb
         uproj = self.gc_storage_client.project
         bucket = self.gc_storage_client.bucket(source_bucket, user_project=uproj)
-        return storage.blob.Blob(path, bucket, chunk_size = chunk_size)
+        return storage.blob.Blob(path, bucket)#, chunk_size = chunk_size)
 
     def get_bytes_handler(self):
-        buff = BytesIO()
-        self.blob.download_to_file(buff)
-        buff.seek(0)
-        return buff
+        #buff = BytesIO()
+        #self.blob.download_to_file(buff)
+        #buff.seek(0)
+        return gscio.Reader(self.blob)
 
 class DRSAnVILFile(GoogleAnVILFile):
     api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"

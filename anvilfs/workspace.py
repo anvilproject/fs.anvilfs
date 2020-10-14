@@ -9,28 +9,6 @@ from .workloadidentitycredentials import WorkloadIdentityCredentials
 from .workspacebucket import OtherDataFolder, WorkspaceBucket
 
 
-# class WorkspaceData(BaseAnVILFile):
-#     def __init__(self, name, data_dict):
-#         self.name = name
-#         self.buffer = self._dict_to_buffer(data_dict)
-#         self.last_modified = None
-    
-#     def _dict_to_buffer(self, d):
-#         # only keys that match the below regex are valid 
-#         keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
-#         data = ""
-#         for k in keys:
-#             data += f"{k}\t{d[k]}\n"
-#         buffer = BytesIO(data.encode('utf-8'))
-#         position = buffer.tell()
-#         buffer.seek(0, SEEK_END)
-#         self.size = buffer.tell()
-#         buffer.seek(position, SEEK_SET)
-#         return buffer
-
-#     def get_bytes_handler(self):
-#         return self.buffer
-
 class Workspace(BaseAnVILFolder):
     def __init__(self, namespace_reference,  workspace_name):
         self.namespace = namespace_reference
