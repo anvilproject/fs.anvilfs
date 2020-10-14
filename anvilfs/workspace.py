@@ -1,72 +1,78 @@
 from io import BytesIO
-from os import SEEK_END, SEEK_SET
 from os.path import commonprefix
-import re
 
-from .base import BaseAnVILFolder, BaseAnVILFile
-from .bucket import WorkspaceBucket
+from .basefile import BaseAnVILFile
+from .basefolder import BaseAnVILFolder
 from .reference import ReferenceDataFile, ReferenceDataFolder
-from .tables import RootTablesFolder, TableDataCohort
+from .tables import RootTablesFolder
 from .workloadidentitycredentials import WorkloadIdentityCredentials
+from .workspacebucket import OtherDataFolder, WorkspaceBucket
 
 
-class WorkspaceData(BaseAnVILFile):
-    def __init__(self, name, data_dict):
-        self.name = name
-        self.buffer = self._dict_to_buffer(data_dict)
-        self.last_modified = None
+# class WorkspaceData(BaseAnVILFile):
+#     def __init__(self, name, data_dict):
+#         self.name = name
+#         self.buffer = self._dict_to_buffer(data_dict)
+#         self.last_modified = None
     
-    def _dict_to_buffer(self, d):
-        # only keys that match the below regex are valid 
-        keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
-        data = ""
-        for k in keys:
-            data += f"{k}\t{d[k]}\n"
-        buffer = BytesIO(data.encode('utf-8'))
-        position = buffer.tell()
-        buffer.seek(0, SEEK_END)
-        self.size = buffer.tell()
-        buffer.seek(position, SEEK_SET)
-        return buffer
+#     def _dict_to_buffer(self, d):
+#         # only keys that match the below regex are valid 
+#         keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
+#         data = ""
+#         for k in keys:
+#             data += f"{k}\t{d[k]}\n"
+#         buffer = BytesIO(data.encode('utf-8'))
+#         position = buffer.tell()
+#         buffer.seek(0, SEEK_END)
+#         self.size = buffer.tell()
+#         buffer.seek(position, SEEK_SET)
+#         return buffer
 
-    def get_bytes_handler(self):
-        return self.buffer
+#     def get_bytes_handler(self):
+#         return self.buffer
 
 class Workspace(BaseAnVILFolder):
     def __init__(self, namespace_reference,  workspace_name):
         self.namespace = namespace_reference
+        # collect workspace attributes that inform structure
         resp = self.fetch_api_info(workspace_name)
         self.bucket_name = resp["workspace"]["bucketName"]
-        attributes = resp["workspace"]["attributes"]
+        self.attributes = resp["workspace"]["attributes"]
         try:
             super().__init__(workspace_name, resp["workspace"]["lastModified"])
         except KeyError as e:
             print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
+    
+    def lazy_init(self):
+        if self.initialized:
+            print(f"{self.name} already initialized!")
+            return
+        # STUFF THAT CAN BE LAZILY LOADED
         # Tables folder
         table_baf = RootTablesFolder(self.fetch_entity_info(), self)
         self[table_baf.name] = table_baf
         # bucket folder
-        bucket_baf = BaseAnVILFolder("Other Data/")
+        bucket_baf = OtherDataFolder(self.attributes, self.bucket_name)
         self[bucket_baf.name] = bucket_baf
         # ref data folder
-        refs = self.ref_extractor(attributes)
+        refs = self.ref_extractor(self.attributes)
         ref_baf = ReferenceDataFolder("Reference Data/", refs)
         self[ref_baf.name] = ref_baf
         # populate workspace data
-        workspacedata = dict(attributes)
-        blocklist_prefixes = [
-            "referenceData_",
-            "description"
-        ]
-        for datum in attributes:
-            for blocked in blocklist_prefixes:
-                if datum.startswith(blocked):
-                    del workspacedata[datum]
-        if workspacedata:
-            _wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
-            bucket_baf[_wsd.name] = _wsd
-        _wsb = WorkspaceBucket(self.bucket_name)
-        bucket_baf[_wsb.name] = _wsb
+        # workspacedata = dict(self.attributes)
+        # blocklist_prefixes = [
+        #     "referenceData_",
+        #     "description"
+        # ]
+        # for datum in self.attributes:
+        #     for blocked in blocklist_prefixes:
+        #         if datum.startswith(blocked):
+        #             del workspacedata[datum]
+        # if workspacedata:
+        #     _wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
+        #     bucket_baf[_wsd.name] = _wsd
+        # _wsb = WorkspaceBucket(self.bucket_name)
+        # bucket_baf[_wsb.name] = _wsb
 
     def ref_extractor(self, attribs):
         # structure:

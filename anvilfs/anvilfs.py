@@ -1,4 +1,5 @@
-from .base import BaseAnVILFolder, ClientRepository
+from .clientrepository import ClientRepository
+from .basefolder import BaseAnVILFolder
 from .google import DRSAnVILFile
 from .namespace import Namespace
 from .workspace import Workspace
@@ -26,7 +27,6 @@ class AnVILFS(FS, ClientRepository):
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
             self.fapi.fcconfig.set_root_url(api_url)
-        # /hax
         self.namespace = Namespace(namespace)
         self.workspace = self.namespace.fetch_workspace(workspace)
         self.rootobj = self.workspace  # leaving the option to make namespace root
@@ -45,7 +45,7 @@ class AnVILFS(FS, ClientRepository):
         if isinstance(maybe_dir, BaseAnVILFolder):
             return maybe_dir.keys()
         else:
-            raise DirectoryExpected("{} is not a directory".format(path))
+            raise DirectoryExpected(f"{path}")
 
     def scandir(self, path):
         if path[-1] != "/":

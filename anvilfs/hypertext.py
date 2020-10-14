@@ -2,7 +2,8 @@ import requests
 import json
 from io import BytesIO
 
-from .base import BaseAnVILFile, ClientRepository
+from .basefile import BaseAnVILFile
+from .clientrepository import ClientRepository
 
 class HypertextAnVILFile(BaseAnVILFile):
     def __init__(self, url, name=None, size=None, last_modified=None):
