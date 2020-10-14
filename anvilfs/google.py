@@ -50,9 +50,10 @@ class GoogleAnVILFile(BaseAnVILFile):
 
     def info_to_blob(self, source_bucket, path):
         # requires project, bucket_name, prefix
+        chunk_size = 10485760 # 10MB
         uproj = self.gc_storage_client.project
         bucket = self.gc_storage_client.bucket(source_bucket, user_project=uproj)
-        return storage.blob.Blob(path, bucket)
+        return storage.blob.Blob(path, bucket, chunk_size = chunk_size)
 
     def get_bytes_handler(self):
         buff = BytesIO()
