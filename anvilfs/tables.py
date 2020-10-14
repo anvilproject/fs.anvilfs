@@ -1,4 +1,3 @@
-from io import BytesIO
 from time import sleep
 
 from .basefile import BaseAnVILFile

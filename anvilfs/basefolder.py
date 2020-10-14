@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from fs.enums import ResourceType
 from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
@@ -98,8 +96,9 @@ class BaseAnVILFolder(BaseAnVILResource):
         allowed_protocols = {
             "gs": GoogleAnVILFile,
             "drs": DRSAnVILFile,
-            "http": HypertextAnVILFile,
-            "https": HypertextAnVILFile
+            # the below is better done downloading a tsv and using Galaxy's rule-based uploader, for now
+            #"http": HypertextAnVILFile,
+            #"https": HypertextAnVILFile
         }
         blocked_file_prefixes = [
             "data-explorer?"
