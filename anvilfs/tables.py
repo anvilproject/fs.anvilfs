@@ -60,6 +60,8 @@ class TableFolder(BaseAnVILFolder):
         resp = self.get_entity_info()
         for entry in resp:
             e_attrs = entry["attributes"]
+            if entry["entityType"] == "cohort" and "query" in e_attrs:
+                linked_files.append(TableDataCohort(entry["name"],e_attrs["query"]))
             for attr in self.attribs:
                 addendum = ""
                 if attr in e_attrs:
@@ -99,20 +101,6 @@ class TableFolder(BaseAnVILFolder):
         for f in linked_files:
             self[f.name] = f
 
-    # def is_linkable_file(self, fname):
-    #     protocol = fname.split("://")[0]
-    #     allowed_protocols = {
-    #         "gs": GoogleAnVILFile,
-    #         "drs": DRSAnVILFile,
-    #         "http": HypertextAnVILFile,
-    #         "https": HypertextAnVILFile
-    #     }
-    #     if protocol in allowed_protocols:
-    #         return allowed_protocols[protocol]
-    #     else:
-    #         return None
-
-        
     def get_entity_info(self):
         resp = self.fapi.get_entities(
             self.wsref.namespace.name, 
@@ -127,9 +115,9 @@ class TableFolder(BaseAnVILFolder):
 
 class TableDataCohort(BaseAnVILFile):
 
-    def __init__(self, name, attribs):
-        query = attribs["query"]
-        self.name = name
+    def __init__(self, name, query):
+        #query = attribs["query"]
+        self.name = name + "_query_results.tsv"
         self.size = 1 # some placeholder? cant lazy load AND init with total size of results
         self.query = query
         self.last_modified = "" # #TODO determine if this is ok
