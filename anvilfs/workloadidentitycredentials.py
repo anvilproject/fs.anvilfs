@@ -6,7 +6,7 @@ import json
 class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
     def __init__(self, scopes):
         super(WorkloadIdentityCredentials, self).__init__()
-        print(f"Init with scopes={scopes}")
+        #print(f"Init with scopes={scopes}")
         self._scopes = scopes
 
     def with_scopes(self, scopes):
@@ -17,7 +17,7 @@ class WorkloadIdentityCredentials(credentials.Scoped, credentials.Credentials):
         return False
 
     def refresh(self, request):
-        print(f"Refresh with scopes={self._scopes}")
+        #print(f"Refresh with scopes={self._scopes}")
         url = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token'
         if self._scopes:
             url += '?scopes=' + ','.join(self._scopes)
