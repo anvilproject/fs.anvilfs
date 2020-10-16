@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-
-from setuptools import setup
-
-from anvilfs.__about__ import __version__
-
 """A setuptools based setup module.
 See:
 https://packaging.python.org/guides/distributing-packages-using-setuptools/
@@ -12,6 +7,8 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 import pathlib
+
+from anvilfs.__about__ import __version__
 
 here = pathlib.Path(__file__).parent.resolve()
 
@@ -74,7 +71,7 @@ setup(
     #
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
- #TODO#url='https://github.com/pypa/sampleproject',  # Optional
+    # TODO url='https://github.com/pypa/sampleproject',  # Optional
 
     # This should be your name or the name of the organization which owns the
     # project.
@@ -118,11 +115,11 @@ setup(
     # Note that this is a list of additional keywords, separated
     # by commas, to be used to assist searching for the distribution in a
     # larger catalog.
-#TODO keywords='sample, setuptools, development',  # Optional
+    # TODO keywords='sample, setuptools, development',  # Optional
 
     # When your source code is in a subdirectory under the project root, e.g.
     # `src/`, it is necessary to specify the `package_dir` argument.
-#    package_dir={'': 'src'},  # Optional
+    # package_dir={'': 'src'},  # Optional
 
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
@@ -133,7 +130,8 @@ setup(
     #
     #   py_modules=["my_module"],
     #
-    packages=find_packages(exclude=['tests', 'build', 'fs.anvilfs.egg-info']),  # Required
+    packages=find_packages(
+        exclude=['tests', 'build', 'fs.anvilfs.egg-info']),  # Required
 
     # Specify which Python versions you support. In contrast to the
     # 'Programming Language' classifiers above, 'pip install' will check this
@@ -151,7 +149,8 @@ setup(
             'firecloud>=0.16.29',
             'fs',
             'google-cloud-storage',
-            'google-cloud-bigquery'
+            'google-cloud-bigquery',
+            'gs-chunked-io'
       ],
 
     # List additional groups of dependencies here (e.g. development
@@ -162,23 +161,23 @@ setup(
     #
     # Similar to `install_requires` above, these must be valid existing
     # projects.
-#     extras_require={  # Optional
-#         'dev': ['check-manifest'],
-#         'test': ['coverage'],
-#     },
+    # extras_require={  # Optional
+    #     'dev': ['check-manifest'],
+    #     'test': ['coverage'],
+    # },
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.
-#     package_data={  # Optional
-#         'sample': ['package_data.dat'],
-#     },
+    # package_data={  # Optional
+    #     'sample': ['package_data.dat'],
+    # },
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/distutils/setupscript.html#installing-additional-files
     #
     # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-#     data_files=[('my_data', ['data/data_file'])],  # Optional
+    # data_files=[('my_data', ['data/data_file'])],  # Optional
 
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
@@ -187,11 +186,11 @@ setup(
     #
     # For example, the following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
-#     entry_points={  # Optional
-#         'console_scripts': [
-#             'sample=sample:main',
-#         ],
-#     },
+    # entry_points={  # Optional
+    #     'console_scripts': [
+    #         'sample=sample:main',
+    #     ],
+    # },
 
     # List additional URLs that are relevant to your project as a dict.
     #
@@ -202,10 +201,10 @@ setup(
     # issues, where the source is hosted, where to say thanks to the package
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
-#TODO project_urls={  # Optional
-#         'Bug Reports': 'https://github.com/pypa/sampleproject/issues',
-#         'Funding': 'https://donate.pypi.org',
-#         'Say Thanks!': 'http://saythanks.io/to/example',
-#         'Source': 'https://github.com/pypa/sampleproject/',
-#     },
+    # TODO project_urls={  # Optional
+    #     'Bug Reports': 'https://github.com/pypa/sampleproject/issues',
+    #     'Funding': 'https://donate.pypi.org',
+    #     'Say Thanks!': 'http://saythanks.io/to/example',
+    #     'Source': 'https://github.com/pypa/sampleproject/',
+    # },
 )
