@@ -3,6 +3,8 @@ from os import SEEK_END, SEEK_SET
 
 import re
 
+import gs_chunked_io as gscio
+
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
 
@@ -107,10 +109,7 @@ class WorkspaceBucketFile(BaseAnVILFile):
         self.is_dir = False
     
     def get_bytes_handler(self):
-        buffer = BytesIO()
-        self.blob_handle.download_to_file(buffer)
-        buffer.seek(0)
-        return buffer
+        return gscio.Reader(self.blob_handle)
 
 
 class WorkspaceData(BaseAnVILFile):
