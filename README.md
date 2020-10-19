@@ -21,7 +21,8 @@ Galaxy installation requirements:
 
 
 Dependency requirements:
-- fiss python library
-- google cloud python library
-- google cloud sdk
+- [FISS -- (Fi)reCloud (S)ervice (S)elector python library](https://github.com/broadinstitute/fiss)
+- Google Cloud Python client library
+- Google Cloud SDK
   - configured with AnVIL project
+- [gs-chunked-io](https://github.com/xbrianh/gs-chunked-io)
