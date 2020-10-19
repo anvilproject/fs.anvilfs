@@ -3,6 +3,7 @@ from time import sleep
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
 
+from .google import DRSAnVILFile, LazyDRSAnVILFile
 
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
@@ -54,12 +55,16 @@ class TableFolder(BaseAnVILFolder):
         base_table = {
             name: [] for name in self.attribs
         }
+        has_metadata = False
+        if(set(["file_name", "file_size", "updated_datetime"]).issubset(set(self.attribs))):
+            has_metadata = True
         linked_files = []
         file_links = {}
         # get remote info
         resp = self.get_entity_info()
         for entry in resp:
             e_attrs = entry["attributes"]
+            # if entry is a cohort with underlying query, add it as a file
             if entry["entityType"] == "cohort" and "query" in e_attrs:
                 linked_files.append(TableDataCohort(entry["name"],e_attrs["query"]))
             for attr in self.attribs:
@@ -82,10 +87,24 @@ class TableFolder(BaseAnVILFolder):
                         addendum = val
                         # check if its a linkable file
                         efiletype = self.is_linkable_file(val)
+                        # if it's a linkable file...
                         if efiletype is not None:
                             if efiletype not in file_links:
                                 file_links[efiletype] = []
-                            file_links[efiletype].append(val)
+                            # if we can lazy-load DRS info
+                            if efiletype == DRSAnVILFile and has_metadata:
+                                try:
+                                    linked_files.append(LazyDRSAnVILFile(
+                                        val,
+                                        e_attrs["file_name"],
+                                        e_attrs["file_size"],
+                                        e_attrs["updated_datetime"]
+                                    ))
+                                # if somehow that information doesn't exist, fall back
+                                except KeyError:
+                                    file_links[efiletype].append(val)
+                            else:
+                                file_links[efiletype].append(val)
                 base_table[attr].append(addendum)
         
         for method in file_links:
