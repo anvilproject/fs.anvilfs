@@ -11,6 +11,7 @@ import gs_chunked_io as gscio
 from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 
+
 class GoogleAnVILFile(BaseAnVILFile):
     def __init__(self, input):
         if type(input) == str and input.startswith("gs://"):
@@ -64,6 +65,7 @@ class GoogleAnVILFile(BaseAnVILFile):
         #self.blob.download_to_file(buff)
         #buff.seek(0)
         return gscio.Reader(self.blob)
+
 
 class DRSAnVILFile(GoogleAnVILFile):
     api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
@@ -149,3 +151,22 @@ class DRSAnVILFile(GoogleAnVILFile):
         for item in gs_info:
             file_objects.append(GoogleAnVILFile(item))
         return file_objects
+
+
+class LazyDRSAnVILFile(DRSAnVILFile):
+    def __init__(self, uri, name, size=None, last_modified=None):
+        print(f"lazy init {name}")
+        self.uri = uri
+        self.name = name
+        if not size:
+            self.size = 1
+        else:
+            self.size = size
+        if not last_modified:
+            self.last_modified = ""
+        else:
+            self.last_modified = last_modified
+    
+    def get_bytes_handler(self):
+        super().__init__(self.uri)
+        return super().get_bytes_handler()
