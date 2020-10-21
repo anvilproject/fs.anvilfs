@@ -10,8 +10,8 @@ from .workspacebucket import OtherDataFolder, WorkspaceBucket
 
 
 class Workspace(BaseAnVILFolder):
-    def __init__(self, namespace_reference,  workspace_name):
-        self.namespace = namespace_reference
+    def __init__(self, namespace_name,  workspace_name):
+        self.namespace_name = namespace_name
         # collect workspace attributes that inform structure
         resp = self.fetch_api_info(workspace_name)
         self.bucket_name = resp["workspace"]["bucketName"]
@@ -123,14 +123,14 @@ class Workspace(BaseAnVILFolder):
 
     def fetch_api_info(self, workspace_name):
         fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
-        resp = self.fapi.get_workspace(namespace=self.namespace.name, workspace=workspace_name, fields=fields)
+        resp = self.fapi.get_workspace(namespace=self.namespace_name, workspace=workspace_name, fields=fields)
         if resp.status_code == 200:
             return resp.json()
         else:
             resp.raise_for_status()
 
     def fetch_entity_info(self):
-        resp = self.fapi.list_entity_types(namespace=self.namespace.name, workspace=self.name)
+        resp = self.fapi.list_entity_types(namespace=self.namespace_name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
         return resp.json()

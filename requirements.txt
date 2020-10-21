@@ -3,3 +3,4 @@ fs
 google-cloud-storage
 google-cloud-bigquery
 gs-chunked-io
+pytest
