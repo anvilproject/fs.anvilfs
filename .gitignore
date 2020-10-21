@@ -3,3 +3,4 @@ __pycache__/
 tests/__pycache__/
 build/
 dist/
+anvilfs/tests/config.yml
