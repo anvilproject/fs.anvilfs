@@ -58,9 +58,14 @@ class Workspace(BaseAnVILFolder):
         #      "reftype": {urlstr, blob} }}
         result = {}
         google_buckets = {}
+        
         for ref in [r for r in attribs if r.startswith("referenceData_")]:
+            # e.g.,
+            # referenceData_hg38_known_indels_sites_VCFs
+            # source = hg38
+            # reftype = known_indels_sites_VCFs
             val = attribs[ref]
-            refsplit = ref.split("_", 2) 
+            refsplit = ref.split("_", 2)
             source = refsplit[1]
             reftype = refsplit[2]
             if source not in result:
