@@ -149,7 +149,6 @@ class DRSAnVILFile(GoogleAnVILFile):
 
 class LazyDRSAnVILFile(DRSAnVILFile):
     def __init__(self, uri, name, size=None, last_modified=None):
-        print(f"lazy init {name}")
         self.uri = uri
         self.name = name
         if not size:
