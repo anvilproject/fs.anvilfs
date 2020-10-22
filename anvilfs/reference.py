@@ -1,7 +1,8 @@
-from io import BytesIO
-
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
+from .google import GoogleAnVILFile
+
+import gs_chunked_io as gscio
 
 class ReferenceDataFolder(BaseAnVILFolder):
     def __init__(self, name, refs):
@@ -14,26 +15,26 @@ class ReferenceDataFolder(BaseAnVILFolder):
     def init_references(self, refs):
         for source in refs:
             # source, e.g. hg38
-            source_folder = RefereneDataSubfolder(source+"/")
+            source_folder = RefereneDataSubfolder(source+"/", refs[source])
             self[source_folder.name] = source_folder
             # reftype, e.g. axiomPoly_resource_vcf
-            for reftype in refs[source]:
+
+class RefereneDataSubfolder(BaseAnVILFolder):
+    def __init__(self, name, refs_source={}):
+        super().__init__(name)
+        self.refs_source = refs_source
+
+    def lazy_init(self):
+        for reftype in self.refs_source:
                 reftype_folder = RefereneDataSubfolder(reftype+"/")
-                source_folder[reftype_folder.name] = reftype_folder
-                contents = ReferenceDataFile.make_rdfs(refs[source][reftype])
+                self[reftype_folder.name] = reftype_folder
+                contents = ReferenceDataFile.make_rdfs(self.refs_source[reftype])
                 for c in contents:
                     reftype_folder[c.name] = c
 
-class RefereneDataSubfolder(BaseAnVILFolder):
-    def __init__(self, name):
-        super().__init__(name)
-        self.initialized = True
-    
-    def lazy_init(self):
-        pass
-
 class ReferenceDataFile(BaseAnVILFile):
     def __init__(self, blob):
+        blob.reload()
         self.blob_handle = blob
         self.name = blob.name.split("/")[-1]
         self.last_modified = blob.updated
@@ -44,11 +45,9 @@ class ReferenceDataFile(BaseAnVILFile):
     def make_rdfs(cls, objs):
         result = []
         for o in objs:
-            result.append(cls(objs[o]))
+            blob = GoogleAnVILFile.uri_to_blob(o)
+            result.append(cls(blob))
         return result
 
     def get_bytes_handler(self):
-        buffer = BytesIO()
-        self.blob_handle.download_to_file(buffer)
-        buffer.seek(0)
-        return buffer
+        return gscio.Reader(self.blob_handle)

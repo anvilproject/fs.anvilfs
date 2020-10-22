@@ -24,13 +24,13 @@ class TableEntriesFile(BaseAnVILFile):
 
 
 class RootTablesFolder(BaseAnVILFolder):
-    def __init__(self, einfo, wsref):
+    def __init__(self, wsref):
         self.name = "Tables/"
-        self.einfo = einfo
         self.wsref = wsref
         super().__init__(self.name)
 
     def lazy_init(self):
+        self.einfo = self.wsref.fetch_entity_info()
         for ename in self.einfo:
             attribs = self.einfo[ename]["attributeNames"]
             eid = self.einfo[ename]["idName"]
@@ -122,7 +122,7 @@ class TableFolder(BaseAnVILFolder):
 
     def get_entity_info(self):
         resp = self.fapi.get_entities(
-            self.wsref.namespace.name, 
+            self.wsref.namespace_name, 
             self.wsref.name,
             self.type)
         if resp.status_code == 200:
