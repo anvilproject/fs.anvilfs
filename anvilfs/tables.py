@@ -24,13 +24,13 @@ class TableEntriesFile(BaseAnVILFile):
 
 
 class RootTablesFolder(BaseAnVILFolder):
-    def __init__(self, einfo, wsref):
+    def __init__(self, wsref):
         self.name = "Tables/"
-        self.einfo = einfo
         self.wsref = wsref
         super().__init__(self.name)
 
     def lazy_init(self):
+        self.einfo = self.wsref.fetch_entity_info()
         for ename in self.einfo:
             attribs = self.einfo[ename]["attributeNames"]
             eid = self.einfo[ename]["idName"]
@@ -62,18 +62,20 @@ class TableFolder(BaseAnVILFolder):
         file_links = {}
         # get remote info
         resp = self.get_entity_info()
+        # for each entity,
         for entry in resp:
             e_attrs = entry["attributes"]
             # if entry is a cohort with underlying query, add it as a file
             if entry["entityType"] == "cohort" and "query" in e_attrs:
                 linked_files.append(TableDataCohort(entry["name"],e_attrs["query"]))
+            # for each of the column names
             for attr in self.attribs:
                 addendum = ""
                 if attr in e_attrs:
                     val = e_attrs[attr]
                     if val is None:
                         val = ""
-                    if type(val) == dict: # if theres more processing, e.g. not a string
+                    if type(val) == dict and "itemsType" in val: # if theres more processing, e.g. not a string
                         # mere string attributes
                         if val["itemsType"] == "AttributeValue":
                             addendum = ",".join(val["items"])
@@ -83,6 +85,8 @@ class TableFolder(BaseAnVILFolder):
                                 [x["entityName"] for x in val["items"]]
                             )
                     else:
+                        if type(val) == dict and "entityName" in val:
+                            val = val["entityName"]
                         val = str(val) # enforce string
                         addendum = val
                         # check if its a linkable file
@@ -122,7 +126,7 @@ class TableFolder(BaseAnVILFolder):
 
     def get_entity_info(self):
         resp = self.fapi.get_entities(
-            self.wsref.namespace.name, 
+            self.wsref.namespace_name, 
             self.wsref.name,
             self.type)
         if resp.status_code == 200:

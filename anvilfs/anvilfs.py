@@ -27,8 +27,9 @@ class AnVILFS(FS, ClientRepository):
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
             self.fapi.fcconfig.set_root_url(api_url)
-        self.namespace = Namespace(namespace)
-        self.workspace = self.namespace.fetch_workspace(workspace)
+        self.namespace = Namespace(namespace, [workspace])
+        #self.workspace = self.namespace.fetch_workspace(workspace)
+        self.workspace = self.namespace[workspace+"/"]
         self.rootobj = self.workspace  # leaving the option to make namespace root
 
     def getinfo(self, path, namespaces=None):

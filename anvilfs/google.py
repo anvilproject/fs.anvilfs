@@ -11,39 +11,27 @@ import gs_chunked_io as gscio
 from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 
+local_cr = ClientRepository()
 
 class GoogleAnVILFile(BaseAnVILFile):
-    def __init__(self, input):
-        if type(input) == str and input.startswith("gs://"):
-            #normal
-            url = input
-            _split = url[len("gs://"):].split("/")
-            self.name = _split[-1]
-            filepath = "/".join(_split[1:])
-            self.blob = self.info_to_blob(_split[0], filepath)
+    def __init__(self, info):
+        kb = 1024
+        mb = 1024*kb
+        self.chunk_size = 200*mb
+
+        if type(info) == str and info.startswith("gs://"):
+            self.blob = self.uri_to_blob(info)
             self.blob.reload()
             self.size = self.blob.size
             self.last_modified = self.blob.updated
-            # blobs = self.gc_storage_client.list_blobs(_bucket, prefix=filepath)
-            # #buck = self.client.get_bucket(_split[0])
-            # self.blob = None
-            # self.size = None
-            # self.last_modified = None
-            # for b in blobs:
-            #     if b.name == filepath:
-            #         self.blob = b
-            #         self.size = b.size
-            #         self.last_modified = b.updated
-            #         break
-            # if not self.blob and not self.size and not self.last_modified:
-            #     raise Exception(f"blob '{self.name}' not found...")
-        elif type(input) == dict:
-            self.name = input["name"]
-            self.blob = self.info_to_blob(input["bucket"], input["path"])
-            self.size = input["size"]
-            self.last_modified = input["last_modified"]
-        #self.blob = buck.get_blob("/".join(_split[1:]))
-    
+            self.name = info.split("/")[-1]
+            print(f"...and that name was {self.name}")
+        elif type(info) == dict:
+            self.name = info["name"]
+            self.blob = self.info_to_blob(info["bucket"], info["path"])
+            self.size = info["size"]
+            self.last_modified = info["last_modified"]
+
     @classmethod
     def factory(cls, gslist):
         results = []
@@ -51,11 +39,19 @@ class GoogleAnVILFile(BaseAnVILFile):
             results.append(GoogleAnVILFile(item))
         return results
 
+    @classmethod
+    def uri_to_blob(cls, uri):
+        split = uri.split("/")
+        source_bucket = split[2]
+        path = "/".join(split[3:])
+        uproj = local_cr.gc_storage_client.project
+        bucket = local_cr.gc_storage_client.bucket(source_bucket, user_project=uproj)
+        #return cls.info_to_blob(bucket, path)
+        print(f"{path} ~ {bucket}")
+        return storage.blob.Blob(path, bucket)
+
     def info_to_blob(self, source_bucket, path):
         # requires project, bucket_name, prefix
-        kb = 1024
-        mb = 1024*kb
-        chunk_size = 200*mb
         uproj = self.gc_storage_client.project
         bucket = self.gc_storage_client.bucket(source_bucket, user_project=uproj)
         return storage.blob.Blob(path, bucket)#, chunk_size = chunk_size)
@@ -155,7 +151,6 @@ class DRSAnVILFile(GoogleAnVILFile):
 
 class LazyDRSAnVILFile(DRSAnVILFile):
     def __init__(self, uri, name, size=None, last_modified=None):
-        print(f"lazy init {name}")
         self.uri = uri
         self.name = name
         if not size:
