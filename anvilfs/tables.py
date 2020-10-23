@@ -75,7 +75,7 @@ class TableFolder(BaseAnVILFolder):
                     val = e_attrs[attr]
                     if val is None:
                         val = ""
-                    if type(val) == dict: # if theres more processing, e.g. not a string
+                    if type(val) == dict and "itemsType" in val: # if theres more processing, e.g. not a string
                         # mere string attributes
                         if val["itemsType"] == "AttributeValue":
                             addendum = ",".join(val["items"])
@@ -85,6 +85,8 @@ class TableFolder(BaseAnVILFolder):
                                 [x["entityName"] for x in val["items"]]
                             )
                     else:
+                        if type(val) == dict and "entityName" in val:
+                            val = val["entityName"]
                         val = str(val) # enforce string
                         addendum = val
                         # check if its a linkable file

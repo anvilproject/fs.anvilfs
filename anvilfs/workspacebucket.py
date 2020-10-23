@@ -15,16 +15,19 @@ class OtherDataFolder(BaseAnVILFolder):
         self.attributes = attributes
 
     def lazy_init(self):
+        # clone it to delete from one while iterating over other
         workspacedata = dict(self.attributes)
         blocklist_prefixes = [
             "referenceData_",
-            "description"
+            "description",
+            "tag:"
         ]
         for datum in self.attributes:
             for blocked in blocklist_prefixes:
                 if datum.startswith(blocked):
                     del workspacedata[datum]
         if workspacedata:
+            print(workspacedata)
             wsdf = WorkspaceDataFolder(workspacedata)
             #_wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
             self[wsdf.name] = wsdf
@@ -45,6 +48,7 @@ class WorkspaceDataFolder(BaseAnVILFolder):
             if filetype is not None:
                 if filetype not in files:
                     files[filetype] = []
+                print(f"appending {val} to linkable files")
                 files[filetype].append(val)
         linked_files = []
         for method in files:
