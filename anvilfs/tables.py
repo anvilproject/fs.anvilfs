@@ -62,11 +62,13 @@ class TableFolder(BaseAnVILFolder):
         file_links = {}
         # get remote info
         resp = self.get_entity_info()
+        # for each entity,
         for entry in resp:
             e_attrs = entry["attributes"]
             # if entry is a cohort with underlying query, add it as a file
             if entry["entityType"] == "cohort" and "query" in e_attrs:
                 linked_files.append(TableDataCohort(entry["name"],e_attrs["query"]))
+            # for each of the column names
             for attr in self.attribs:
                 addendum = ""
                 if attr in e_attrs:
