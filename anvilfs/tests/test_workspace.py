@@ -23,7 +23,13 @@ class TestWorkspace:
         ]
         ns_name = valid_gs_info["Namespace"]
         ws_name = valid_gs_info["Workspace"]
+        starts_uninitialized = ws.initialized == False
         ws = Workspace(ns_name, ws_name)
         assert (
+            starts_uninitialized and
+            ws.initialized == True and
             ws.keys() == init_folders
         )
+    
+    def test_ref_extractor(self, dummy_attributes):
+        pass

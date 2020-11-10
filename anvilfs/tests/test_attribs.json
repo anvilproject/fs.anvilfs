@@ -1,0 +1,54 @@
+{
+    "referenceData_hg38_known_indels_sites_VCFs": {
+        "itemsType": "AttributeValue",
+        "items": [
+        "gs://gcp-public-data--broad-references/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+        "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz"
+        ]
+    },
+    "referenceData_hg38_ref_fasta": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta",
+    "referenceData_hg38_ref_alt": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.alt",
+    "referenceData_hg38_ref_amb": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.amb",
+    "referenceData_hg38_axiomPoly_resource_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/Axiom_Exome_Plus.genotypes.all_populations.poly.hg38.vcf.gz.tbi",
+    "referenceData_hg38_ref_fasta_index": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.fai",
+    "gs": "gs://fc-56ac46ea-efc4-4683-b6d5-6d95bed41c5e/CCDG_13607/Project_CCDG_13607_B01_GRM_WGS.gVCF.2019-02-06/Sample_NA18982/analysis/NA18982.haplotypeCalls.er.raw.g.vcf.gz",
+    "referenceData_hg38_mills_resource_vcf": "gs://gcp-public-data--broad-references/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+    "description": "anvilfs test workspace",
+    "referenceData_hg38_one_thousand_genomes_resource_vcf": "gs://gcp-public-data--broad-references/hg38/v0/1000G_phase1.snps.high_confidence.hg38.vcf.gz",
+    "referenceData_hg38_dbsnp_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.dbsnp138.vcf.idx",
+    "referenceData_hg38_known_indels_sites_indices": {
+        "itemsType": "AttributeValue",
+        "items": [
+        "gs://gcp-public-data--broad-references/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi",
+        "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz.tbi"
+        ]
+    },
+    "referenceData_hg38_one_thousand_genomes_resource_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi",
+    "referenceData_hg38_call_interval_list": "gs://gcp-public-data--broad-references/hg38/v0/wgs_calling_regions.hg38.interval_list",
+    "https": "https://64.media.tumblr.com/7fc42a4c8216ad15e3f362088756a4a6/tumblr_n2o8hnfp1h1tvfheeo1_1280.jpg",
+    "referenceData_hg38_ref_dict": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.dict",
+    "referenceData_hg38_dbsnp_vcf": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.dbsnp138.vcf",
+    "a": "1",
+    "b": "2",
+    "c": "3",
+    "referenceData_hg38_mills_resource_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi",
+    "referenceData_hg38_ref_sa": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.sa",
+    "tag:tags": {
+        "itemsType": "AttributeValue",
+        "items": [
+        "hey im a tag",
+        "i am also a tag"
+        ]
+    },
+    "referenceData_hg38_hapmap_resource_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/hapmap_3.3.hg38.vcf.gz.tbi",
+    "referenceData_hg38_hapmap_resource_vcf": "gs://gcp-public-data--broad-references/hg38/v0/hapmap_3.3.hg38.vcf.gz",
+    "referenceData_hg38_omni_resource_vcf_index": "gs://gcp-public-data--broad-references/hg38/v0/1000G_omni2.5.hg38.vcf.gz.tbi",
+    "referenceData_hg38_axiomPoly_resource_vcf": "gs://gcp-public-data--broad-references/hg38/v0/Axiom_Exome_Plus.genotypes.all_populations.poly.hg38.vcf.gz",
+    "referenceData_hg38_eval_interval_list": "gs://gcp-public-data--broad-references/hg38/v0/wgs_evaluation_regions.hg38.interval_list",
+    "referenceData_hg38_omni_resource_vcf": "gs://gcp-public-data--broad-references/hg38/v0/1000G_omni2.5.hg38.vcf.gz",
+    "referenceData_hg38_scattered_calling_intervals_list": "gs://gatk-test-data/intervals/hg38_wgs_scattered_calling_intervals.txt",
+    "referenceData_hg38_unpadded_intervals_file": "gs://gatk-test-data/intervals/hg38.even.handcurated.20k.intervals",
+    "referenceData_hg38_ref_pac": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.pac",
+    "referenceData_hg38_ref_bwt": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.bwt",
+    "referenceData_hg38_ref_ann": "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta.64.ann"
+}
