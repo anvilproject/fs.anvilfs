@@ -8,7 +8,6 @@ import firecloud.api as fapi
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
-print("!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 conf = {}
 
@@ -47,18 +46,13 @@ class TestWorkspaceManager:
     ATTRIBUTES = attr
     min_attrs = {"a": "1"}
 
-    def __init__(self, ws_name=None, ns_name=None):
-        if not ws_name:
-            ws_name = self.WORKSPACE_NAME
-        if not ns_name:
-            ns_name = self.NAMESPACE_NAME
-        print(f"initializing test workspace {ns_name}>{ws_name}")
+    def __init__(self):
+        print(f"initializing test workspace {self.NAMESPACE_NAME}>{self.WORKSPACE_NAME}")
         wsbucket = self.check_workspaces()
         if wsbucket:
-            print(f"{ws_name} found, deleting existing workspace")
+            print(f"{self.WORKSPACE_NAME} found, deleting existing workspace")
             self.delete_workspace(wsbucket)
         bucketname = self.make_workspace()
-
 
     def check_workspaces(self):
         fields = "workspace.name,workspace.bucketName"
@@ -96,6 +90,18 @@ class TestWorkspaceManager:
         fapi.delete_workspace(self.NAMESPACE_NAME, self.WORKSPACE_NAME)
         self.depopulate_bucket(bucket)
 
+@pytest.fixture(scope="session")
+def test_workspace(self):
+    twm = TestWorkspaceManager()
+    yield twm
+    twm.delete_workspace()
+
+@pytest.fixture(scope="session")
+def test_info(self):
+    return {
+        'workspace_name':self.WORKSPACE_NAME,
+        'namespace_name':self.NAMESPACE_NAME
+    }
 
 #extract info from config
 @pytest.fixture(scope="session")
