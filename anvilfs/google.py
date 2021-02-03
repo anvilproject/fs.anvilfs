@@ -28,16 +28,48 @@ class GoogleAnVILFile(BaseAnVILFile):
             print(f"...and that name was {self.name}")
         elif type(info) == dict:
             self.name = info["name"]
-            self.blob = self.info_to_blob(info["bucket"], info["path"])
+            if "blob" in info:
+                self.blob = info["blob"]
+            else:
+                self.blob = self.info_to_blob(info["bucket"], info["path"])
             self.size = info["size"]
             self.last_modified = info["last_modified"]
+        else:
+            raise Exception(f"Unsupported GoogleAnVILFile init content:\n\t{info}")
 
     @classmethod
-    def factory(cls, gslist):
+    def factory(cls, gs_uri_list):
         results = []
-        for item in gslist:
-            results.append(GoogleAnVILFile(item))
+        MAX_BATCH_SIZE = 1000 # to avoid error; likely the LAZY_THRESHOLD will be reached first
+        gs_uri_2d_array = []
+        sublist = []
+        LAZY_THRESHOLD = 1000 # if bigger than this, metadata is fudged to provide UX quality
+        # create list of blob sublists, sublist <= 1000 elements
+        if len(gs_uri_list) > LAZY_THRESHOLD:
+            return [
+                LazyGoogleAnVILFile(item) for item in gs_uri_list
+            ]
+        for gs_uri in gs_uri_list:
+            # if max length reached, add it to 2d array
+            if len(sublist) == MAX_BATCH_SIZE:
+                gs_uri_2d_array.append(sublist)
+                sublist = []
+            sublist.append(cls.uri_to_blob(gs_uri))
+        # perform batch operations
+        for batch in gs_uri_2d_array:
+            with local_cr.gc_storage_client.batch():
+                for item in batch:
+                    item.reload()
+            # now that sub list has been refreshed, create GSOBJ from metadata
+            for item in batch:
+                results.append(GoogleAnVILFile({
+                    "name": item.name.split("/")[-1],
+                    "last_modified": item.updated,
+                    "size": item.size,
+                    "blob": item
+                }))
         return results
+        
 
     @classmethod
     def uri_to_blob(cls, uri):
@@ -47,7 +79,7 @@ class GoogleAnVILFile(BaseAnVILFile):
         uproj = local_cr.gc_storage_client.project
         bucket = local_cr.gc_storage_client.bucket(source_bucket, user_project=uproj)
         #return cls.info_to_blob(bucket, path)
-        print(f"{path} ~ {bucket}")
+        #print(f"{path} ~ {bucket}")
         return storage.blob.Blob(path, bucket)
 
     def info_to_blob(self, source_bucket, path):
@@ -63,14 +95,31 @@ class GoogleAnVILFile(BaseAnVILFile):
         return gscio.Reader(self.blob)
 
 
+# for use with very large lists
+class LazyGoogleAnVILFile(GoogleAnVILFile):
+    def __init__(self, uri, size=None, last_modified=None):
+        self.uri = uri
+        self.name = uri.split("/")[-1]
+        if not size:
+            self.size = 1
+        else:
+            self.size = size
+        if not last_modified:
+            self.last_modified = ""
+        else:
+            self.last_modified = last_modified
+
+    def get_bytes_handler(self):
+        super().__init__(self.uri)
+        return super().get_bytes_handler()
+
+
 class DRSAnVILFile(GoogleAnVILFile):
     api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
 
     def __init__(self, input):
         token = ClientRepository().get_fapi_token()
-        #api_prefix = "https://dataguids.org/ga4gh/dos/v1/dataobjects/" <- old news
         api_url = self.api_url
-        #apistring = api_prefix + drsurl[len("drs://"):]
         response = requests.post(
             api_url,
             data = {

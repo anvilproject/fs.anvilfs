@@ -43,11 +43,11 @@ class ReferenceDataFile(BaseAnVILFile):
 
     @classmethod
     def make_rdfs(cls, objs):
-        result = []
-        for o in objs:
-            blob = GoogleAnVILFile.uri_to_blob(o)
-            result.append(cls(blob))
-        return result
+        #result = []
+        #for o in objs:
+            #blob = GoogleAnVILFile.uri_to_blob(o)
+            #result.append(cls(blob))
+        return GoogleAnVILFile.factory(objs)
 
     def get_bytes_handler(self):
         return gscio.Reader(self.blob_handle)
