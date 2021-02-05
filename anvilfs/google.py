@@ -25,7 +25,6 @@ class GoogleAnVILFile(BaseAnVILFile):
             self.size = self.blob.size
             self.last_modified = self.blob.updated
             self.name = info.split("/")[-1]
-            print(f"...and that name was {self.name}")
         elif type(info) == dict:
             self.name = info["name"]
             if "blob" in info:
@@ -78,8 +77,6 @@ class GoogleAnVILFile(BaseAnVILFile):
         path = "/".join(split[3:])
         uproj = local_cr.gc_storage_client.project
         bucket = local_cr.gc_storage_client.bucket(source_bucket, user_project=uproj)
-        #return cls.info_to_blob(bucket, path)
-        #print(f"{path} ~ {bucket}")
         return storage.blob.Blob(path, bucket)
 
     def info_to_blob(self, source_bucket, path):
@@ -89,9 +86,6 @@ class GoogleAnVILFile(BaseAnVILFile):
         return storage.blob.Blob(path, bucket)#, chunk_size = chunk_size)
 
     def get_bytes_handler(self):
-        #buff = BytesIO()
-        #self.blob.download_to_file(buff)
-        #buff.seek(0)
         return gscio.Reader(self.blob)
 
 
