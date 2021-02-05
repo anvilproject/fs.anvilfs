@@ -80,7 +80,7 @@ class TableFolder(BaseAnVILFolder):
                         if val["itemsType"] == "AttributeValue":
                             addendum = ",".join(val["items"])
                         # dict attributes referring to another entity
-                        elif val["itemsType"] == "EntityReference": #TODO is this the best way to handle entity references?
+                        elif val["itemsType"] == "EntityReference":
                             addendum = ",".join(
                                 [x["entityName"] for x in val["items"]]
                             )
