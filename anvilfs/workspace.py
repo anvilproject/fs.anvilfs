@@ -1,12 +1,7 @@
-from io import BytesIO
-from os.path import commonprefix
-
-from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
-from .reference import ReferenceDataFile, ReferenceDataFolder
+from .reference import ReferenceDataFolder
 from .tables import RootTablesFolder
-from .workloadidentitycredentials import WorkloadIdentityCredentials
-from .workspacebucket import OtherDataFolder, WorkspaceBucket
+from .workspacebucket import OtherDataFolder
 
 
 class Workspace(BaseAnVILFolder):
@@ -17,10 +12,12 @@ class Workspace(BaseAnVILFolder):
         self.bucket_name = resp["workspace"]["bucketName"]
         self.attributes = resp["workspace"]["attributes"]
         try:
-            super().__init__(workspace_name, resp["workspace"]["lastModified"])
-        except KeyError as e:
-            print("Error: Workspace fetch_api_info({}) fetch failed".format(workspace_name))
-    
+            super().__init__(
+                workspace_name, resp["workspace"]["lastModified"])
+        except KeyError:
+            print("Error: Workspace fetch_api_info({}) fetch failed".format(
+                workspace_name))
+
     def lazy_init(self):
         if self.initialized:
             print(f"{self.name} already initialized!")
@@ -41,8 +38,7 @@ class Workspace(BaseAnVILFolder):
         # { "source": {
         #      "reftype": [urlstr] }}
         result = {}
-        google_buckets = {}
-        
+
         for ref in [r for r in attribs if r.startswith("referenceData_")]:
             # e.g.,
             # referenceData_hg38_known_indels_sites_VCFs
@@ -61,7 +57,7 @@ class Workspace(BaseAnVILFolder):
 
             root_result_obj = result[source][reftype]
 
-            #ensure its a list even if its a list of one
+            # ensure its a list even if its a list of one
             if isinstance(val, dict):
                 val = val["items"]
             elif isinstance(val, str):
@@ -77,15 +73,19 @@ class Workspace(BaseAnVILFolder):
         return result
 
     def fetch_api_info(self, workspace_name):
-        fields = "workspace.attributes,workspace.bucketName,workspace.lastModified"
-        resp = self.fapi.get_workspace(namespace=self.namespace_name, workspace=workspace_name, fields=fields)
+        fields = ("workspace.attributes,workspace.bucketName,"
+                  "workspace.lastModified")
+        resp = self.fapi.get_workspace(
+            namespace=self.namespace_name, workspace=workspace_name,
+            fields=fields)
         if resp.status_code == 200:
             return resp.json()
         else:
             resp.raise_for_status()
 
     def fetch_entity_info(self):
-        resp = self.fapi.list_entity_types(namespace=self.namespace_name, workspace=self.name)
+        resp = self.fapi.list_entity_types(
+            namespace=self.namespace_name, workspace=self.name)
         if resp.status_code != 200:
             resp.raise_for_status()
         return resp.json()

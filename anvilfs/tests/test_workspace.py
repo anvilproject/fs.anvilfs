@@ -1,6 +1,5 @@
-import pytest
-
 from anvilfs.anvilfs import Workspace
+
 
 class TestWorkspace:
     def test_init(self, valid_gs_info):
@@ -13,7 +12,7 @@ class TestWorkspace:
             "bucket_name" in ws_d and
             "attributes" in ws_d
         )
-    
+
     def test_lazy_init(self, valid_gs_info):
         # things that will always be present:
         init_folders = [

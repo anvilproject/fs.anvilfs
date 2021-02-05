@@ -2,7 +2,6 @@ from .clientrepository import ClientRepository
 from .basefolder import BaseAnVILFolder
 from .google import DRSAnVILFile
 from .namespace import Namespace
-from .workspace import Workspace
 from .workloadidentitycredentials import WorkloadIdentityCredentials
 
 from google.auth.transport.requests import AuthorizedSession
@@ -13,9 +12,9 @@ from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 
 class AnVILFS(FS, ClientRepository):
     DEFAULT_API_URL = "https://api.firecloud.org/api/"
-    #DEV_API_URL="https://firecloud-orchestration.dsde-dev.broadinstitute.org/api/"
 
-    def __init__(self, namespace, workspace, api_url=None, on_anvil=False, drs_resolver_url=None):
+    def __init__(self, namespace, workspace, api_url=None,
+                 on_anvil=False, drs_resolver_url=None):
         super(AnVILFS, self).__init__()
         ClientRepository.base_project = namespace
         if not api_url:
@@ -23,14 +22,15 @@ class AnVILFS(FS, ClientRepository):
         if drs_resolver_url:
             DRSAnVILFile.api_url = drs_resolver_url
         if on_anvil:
-            scopes = ['https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/cloud-platform']
+            scopes = ['https://www.googleapis.com/auth/userinfo.email',
+                      'https://www.googleapis.com/auth/userinfo.profile',
+                      'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
             self.fapi.fcconfig.set_root_url(api_url)
         self.namespace = Namespace(namespace, [workspace])
-        #self.workspace = self.namespace.fetch_workspace(workspace)
         self.workspace = self.namespace[workspace+"/"]
-        self.rootobj = self.workspace  # leaving the option to make namespace root
+        self.rootobj = self.workspace  # edit to make namespace root
 
     def getinfo(self, path, namespaces=None):
         return self.rootobj.get_object_from_path(path).getinfo()
@@ -41,7 +41,7 @@ class AnVILFS(FS, ClientRepository):
             return self.rootobj.keys()
         try:
             maybe_dir = self.rootobj.get_object_from_path(path)
-        except KeyError as ke:
+        except KeyError:
             raise ResourceNotFound("Resource {} not found".format(path))
         if isinstance(maybe_dir, BaseAnVILFolder):
             return maybe_dir.keys()
@@ -52,8 +52,8 @@ class AnVILFS(FS, ClientRepository):
         if path[-1] != "/":
             path = path + "/"
         result = []
-        l = self.listdir(path)
-        for o in l:
+        dirlist = self.listdir(path)
+        for o in dirlist:
             result.append(self.getinfo(path+o))
         return result
 
@@ -64,7 +64,7 @@ class AnVILFS(FS, ClientRepository):
         obj = self.rootobj.get_object_from_path(path)
         try:
             return obj.get_bytes_handler()
-        except AttributeError as e:
+        except AttributeError:
             raise FileExpected(
                 "Error: requested object is not a file:\n  {}".format(path))
 
@@ -76,4 +76,3 @@ class AnVILFS(FS, ClientRepository):
 
     def setinfo():  # Set resource information.
         raise Exception("setinfo not implemented")
-    # for network systems, scandir needed otherwise default calls a combination of listdir and getinfo for each file.

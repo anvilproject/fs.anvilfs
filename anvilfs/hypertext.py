@@ -1,9 +1,8 @@
 import requests
-import json
 from io import BytesIO
 
 from .basefile import BaseAnVILFile
-from .clientrepository import ClientRepository
+
 
 class HypertextAnVILFile(BaseAnVILFile):
     def __init__(self, url, name=None, size=None, last_modified=None):
@@ -14,16 +13,16 @@ class HypertextAnVILFile(BaseAnVILFile):
             r = requests.head(url)
             try:
                 self.size = r.headers["Content-Length"]
-            except KeyError as ke:
+            except KeyError:
                 self.size = 1
             try:
                 self.last_modified = r.headers["Last-Modified"]
-            except KeyError as ke:
+            except KeyError:
                 self.last_modified = ""
-    
+
     def get_bytes_handler(self):
         return BytesIO(requests.get(self.url).content)
-    
+
     @classmethod
     def factory(cls, urllist):
         results = []

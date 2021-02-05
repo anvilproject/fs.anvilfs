@@ -1,15 +1,15 @@
 from fs.enums import ResourceType
-from fs.errors import DirectoryExpected, ResourceNotFound, FileExpected
 from fs.info import Info
 
 from .baseresource import BaseAnVILResource
 from .google import GoogleAnVILFile, DRSAnVILFile
-from .hypertext import HypertextAnVILFile
+
 
 class BaseAnVILFolder(BaseAnVILResource):
     def __init__(self, name, last_modified=None):
         self.initialized = False
-        if name[-1] != "/": # required since anvil supports names the same as their containing directories
+        # required as anvil supports files that have same name as directory
+        if name[-1] != "/":
             self.name = name + "/"
         else:
             self.name = name
@@ -19,7 +19,6 @@ class BaseAnVILFolder(BaseAnVILResource):
     def lazily_init(fn):
         def lazywrapper(*args, **kwargs):
             self = args[0]
-            #DEBUGGERY#print(f"lazy init <{self.__class__.__name__} \"{self.name}\">.{fn.__name__}({args},{kwargs})? {self.initialized}")
             if not self.initialized:
                 self.lazy_init()
                 self.initialized = True
@@ -27,13 +26,15 @@ class BaseAnVILFolder(BaseAnVILResource):
         return lazywrapper
 
     def lazy_init(self):
-        raise NotImplementedError(f"{self.__class__.__name__}.lazy_init method is abstract and must be specified")
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.lazy_init method is abstract")
 
     def __hash__(self):
         return hash((self.name, self.__class__.__name__, self.last_modified))
 
     def __eq__(self, other):
-        return (self.name, self.last_modified) == (other.name, other.last_modified)
+        return (self.name, self.last_modified) == (
+            other.name, other.last_modified)
 
     # allow dictionary-style access, with possible objs as keys
     @lazily_init
@@ -56,7 +57,7 @@ class BaseAnVILFolder(BaseAnVILResource):
     def get_object_from_path(self, path):
         if path == "/" or path == "":
             return self
-        #internally, using google-style no initial slash
+        # internally, using google-style no initial slash
         if path[0] == "/":
             path = path[1:]
         # if path represents a folder:
@@ -72,7 +73,7 @@ class BaseAnVILFolder(BaseAnVILResource):
         for component in split:
             base_obj = base_obj[component]
         return base_obj
-    
+
     def __setitem__(self, key, val):
         self.children[key] = val
 
@@ -96,9 +97,6 @@ class BaseAnVILFolder(BaseAnVILResource):
         allowed_protocols = {
             "gs": GoogleAnVILFile,
             "drs": DRSAnVILFile,
-            # the below is better done downloading a tsv and using Galaxy's rule-based uploader, for now
-            #"http": HypertextAnVILFile,
-            #"https": HypertextAnVILFile
         }
         blocked_file_prefixes = [
             "data-explorer?"

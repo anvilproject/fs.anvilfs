@@ -4,11 +4,12 @@ from .google import GoogleAnVILFile
 
 import gs_chunked_io as gscio
 
+
 class ReferenceDataFolder(BaseAnVILFolder):
     def __init__(self, name, refs):
         super().__init__(name)
         self.refs = refs
-    
+
     def lazy_init(self):
         self.init_references(self.refs)
 
@@ -19,6 +20,7 @@ class ReferenceDataFolder(BaseAnVILFolder):
             self[source_folder.name] = source_folder
             # reftype, e.g. axiomPoly_resource_vcf
 
+
 class RefereneDataSubfolder(BaseAnVILFolder):
     def __init__(self, name, refs_source={}):
         super().__init__(name)
@@ -28,9 +30,11 @@ class RefereneDataSubfolder(BaseAnVILFolder):
         for reftype in self.refs_source:
                 reftype_folder = RefereneDataSubfolder(reftype+"/")
                 self[reftype_folder.name] = reftype_folder
-                contents = ReferenceDataFile.make_rdfs(self.refs_source[reftype])
+                contents = ReferenceDataFile.make_rdfs(
+                    self.refs_source[reftype])
                 for c in contents:
                     reftype_folder[c.name] = c
+
 
 class ReferenceDataFile(BaseAnVILFile):
     def __init__(self, blob):
@@ -43,10 +47,6 @@ class ReferenceDataFile(BaseAnVILFile):
 
     @classmethod
     def make_rdfs(cls, objs):
-        #result = []
-        #for o in objs:
-            #blob = GoogleAnVILFile.uri_to_blob(o)
-            #result.append(cls(blob))
         return GoogleAnVILFile.factory(objs)
 
     def get_bytes_handler(self):

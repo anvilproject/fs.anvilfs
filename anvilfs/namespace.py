@@ -1,6 +1,7 @@
 from .basefolder import BaseAnVILFolder
 from .workspace import Workspace
 
+
 class Namespace(BaseAnVILFolder):
     def __init__(self, namespace_name, workspaces=[]):
         super().__init__(namespace_name)

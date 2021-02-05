@@ -8,34 +8,40 @@ from anvilfs.basefile import BaseAnVILFile
 from fs.enums import ResourceType
 from fs.info import Info
 
+
 class TestClientRepository:
     br = ClientRepository()
 
     def test_base_default_project(self):
-        assert self.br.base_project == None
+        assert self.br.base_project is None
 
     def test_ref_defaults(self):
         rs = self.br._refs
         assert (
             rs["fapi"].__name__ == "firecloud.api" and
-            rs["gc_storage_client"] == None and
-            rs["gc_bigquery_client"] == None
+            rs["gc_storage_client"] is None and
+            rs["gc_bigquery_client"] is None
         )
 
     def test_ref_inits(self):
         ris = self.br._ref_inits
+        gcs_string = "<class 'google.cloud.storage.client.Client'>"
+        gcbq_string = "<class 'google.cloud.bigquery.client.Client'>"
         assert (
-            str(ris["gc_storage_client"]) == "<class 'google.cloud.storage.client.Client'>" and
-            str(ris["gc_bigquery_client"]) == "<class 'google.cloud.bigquery.client.Client'>"
+            str(ris["gc_storage_client"]) == gcs_string and
+            str(ris["gc_bigquery_client"]) == gcbq_string
         )
 
     def test_fapi_token(self):
         token = self.br.get_fapi_token()
-        r = requests.get(f"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={token}")
+        rs = ("https://www.googleapis.com/oauth2/v1/"
+              f"tokeninfo?access_token={token}")
+        r = requests.get(rs)
         assert r.status_code == 200
 
+
 class TestBaseResource:
-    
+
     bar = BaseAnVILResource()
 
     def test_info_abstract(self):
@@ -45,7 +51,7 @@ class TestBaseResource:
     def test_hash_abstract(self):
         with pytest.raises(KeyError):
             self.bar.__hash__()
-    
+
     def test_eq_abstract(self):
         with pytest.raises(NotImplementedError):
             self.bar.__eq__(self.bar)
@@ -58,8 +64,9 @@ class TestBaseResource:
         with pytest.raises(NotImplementedError):
             self.bar.__ne__(self.bar)
 
+
 class TestBaseAnVILFolder:
-    
+
     def test_init(self):
         name = "Steve the folder"
         last_modified = "Never"
@@ -69,12 +76,12 @@ class TestBaseAnVILFolder:
             baf.last_modified == last_modified and
             baf.children == {}
         )
-    
+
     def test_lazy_init_abstract(self):
         baf = BaseAnVILFolder("Francesca Folder")
         with pytest.raises(NotImplementedError):
             baf.lazy_init()
-    
+
     def test_hash(self):
         name = "Bort"
         last_modified = "Half past never"
@@ -89,7 +96,7 @@ class TestBaseAnVILFolder:
         baf1 = BaseAnVILFolder(name1, lm1)
         baf2 = BaseAnVILFolder(name2, lm2)
         assert baf1 == baf2
-    
+
     def test_ne(self):
         name1 = "Bort"
         lm1 = "Never"
@@ -102,7 +109,7 @@ class TestBaseAnVILFolder:
     def test_keys(self):
         # requires initialized object
         baf = BaseAnVILFolder("Qwerty")
-        baf.initialized = True # circumvent abstract init
+        baf.initialized = True  # circumvent abstract init
         baf["A"] = "1"
         baf["B"] = "2"
         assert baf.keys() == ["A", "B"]
@@ -115,7 +122,7 @@ class TestBaseAnVILFolder:
     def test_getitem(self):
         # requires initialized object
         baf = BaseAnVILFolder("Qwerty")
-        baf.initialized = True # circumvent abstract init
+        baf.initialized = True  # circumvent abstract init
         baf.children["A"] = "1"
         assert baf["A"] == "1"
 
@@ -124,7 +131,7 @@ class TestBaseAnVILFolder:
         name = "Qwerty"
         subname = "Asdf"
         baf = BaseAnVILFolder(name)
-        baf.initialized = True # circumvent abstract init
+        baf.initialized = True  # circumvent abstract init
         subbaf = BaseAnVILFolder(subname)
         subbaf.initialized = True
         baf[subbaf.name] = subbaf
@@ -133,7 +140,7 @@ class TestBaseAnVILFolder:
 
     def test_iter(self):
         baf = BaseAnVILFolder("Hello")
-        for x in [("A","1"),("B","2"),("C","3")]:
+        for x in [("A", "1"), ("B", "2"), ("C", "3")]:
             baf[x[0]] = x[1]
         keys = [x for x in baf]
         assert keys == ["A", "B", "C"]
@@ -156,7 +163,7 @@ class TestBaseAnVILFolder:
         assert (
             info == expected_info
         )
-    
+
     def test_is_linkable_file(self):
         gs = "gs://some-bucket/some/file"
         drs = "drs://some-bucket/some/file"
@@ -165,8 +172,9 @@ class TestBaseAnVILFolder:
         assert (
             baf.is_linkable_file(gs).__name__ == "GoogleAnVILFile" and
             baf.is_linkable_file(drs).__name__ == "DRSAnVILFile" and
-            baf.is_linkable_file(nada) == None
+            baf.is_linkable_file(nada) is None
         )
+
 
 class TestBaseAnVILFile:
     def test_init(self):
@@ -179,7 +187,7 @@ class TestBaseAnVILFile:
             baf.size == size and
             baf.last_modified == lm
         )
-    
+
     def test_getinfo(self):
         name = "itchy"
         size = 3
@@ -205,7 +213,7 @@ class TestBaseAnVILFile:
         baf = BaseAnVILFile("A", len(string))
         buff = baf.string_to_buffer(string)
         assert buff.read() == string.encode('utf-8')
-    
+
     def test_get_bytes_handler(self):
         with pytest.raises(NotImplementedError):
-            BaseAnVILFile("1",2).get_bytes_handler()
+            BaseAnVILFile("1", 2).get_bytes_handler()
