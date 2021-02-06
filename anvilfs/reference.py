@@ -28,12 +28,12 @@ class RefereneDataSubfolder(BaseAnVILFolder):
 
     def lazy_init(self):
         for reftype in self.refs_source:
-                reftype_folder = RefereneDataSubfolder(reftype+"/")
-                self[reftype_folder.name] = reftype_folder
-                contents = ReferenceDataFile.make_rdfs(
-                    self.refs_source[reftype])
-                for c in contents:
-                    reftype_folder[c.name] = c
+            reftype_folder = RefereneDataSubfolder(reftype+"/")
+            self[reftype_folder.name] = reftype_folder
+            contents = ReferenceDataFile.make_rdfs(
+                self.refs_source[reftype])
+            for c in contents:
+                reftype_folder[c.name] = c
 
 
 class ReferenceDataFile(BaseAnVILFile):

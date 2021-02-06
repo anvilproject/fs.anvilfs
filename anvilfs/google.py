@@ -49,10 +49,13 @@ class GoogleAnVILFile(BaseAnVILFile):
             ]
         for gs_uri in gs_uri_list:
             # if max length reached, add it to 2d array
+            sublist.append(cls.uri_to_blob(gs_uri))
             if len(sublist) == MAX_BATCH_SIZE:
                 gs_uri_2d_array.append(sublist)
                 sublist = []
-            sublist.append(cls.uri_to_blob(gs_uri))
+        # add final under-sized batch to list if it exists
+        if sublist:
+            gs_uri_2d_array.append(sublist)
         # perform batch operations
         for batch in gs_uri_2d_array:
             with local_cr.gc_storage_client.batch():
