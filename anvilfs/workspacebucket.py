@@ -8,6 +8,7 @@ import gs_chunked_io as gscio
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
 
+
 class OtherDataFolder(BaseAnVILFolder):
     def __init__(self, attributes, bucket_name):
         super().__init__("Other Data")
@@ -29,7 +30,6 @@ class OtherDataFolder(BaseAnVILFolder):
         if workspacedata:
             print(workspacedata)
             wsdf = WorkspaceDataFolder(workspacedata)
-            #_wsd = WorkspaceData("WorkspaceData.tsv", workspacedata)
             self[wsdf.name] = wsdf
         _wsb = WorkspaceBucket(self.bucket_name)
         self[_wsb.name] = _wsb
@@ -56,10 +56,11 @@ class WorkspaceDataFolder(BaseAnVILFolder):
                 fresh_files = method.factory(files[method])
                 linked_files.extend(fresh_files)
             except Exception as e:
-                print(f"AnVILFS ERROR: SKIPPING FILE, could not be resolved due to the following error:")
+                print(f"ERROR: SKIPPING FILE due to error:")
                 print(e)
                 continue
-        linked_files.append(WorkspaceData("WorkspaceData.tsv", self.workspacedata))
+        linked_files.append(
+            WorkspaceData("WorkspaceData.tsv", self.workspacedata))
         for f in linked_files:
             self[f.name] = f
 
@@ -72,11 +73,14 @@ class WorkspaceBucketSubFolder(BaseAnVILFolder):
 
     def lazy_init(self):
         if len(self.remaining) == 1:
-            self[self.remaining[0]] = WorkspaceBucketFile(self.initializing_blob)
+            self[self.remaining[0]] = WorkspaceBucketFile(
+                self.initializing_blob)
             del self.initializing_blob
         else:
             subname = self.remaining[0] + '/'
-            self[subname] = WorkspaceBucketSubFolder(subname, self.remaining[1:], self.initializing_blob)
+            self[subname] = WorkspaceBucketSubFolder(
+                subname, self.remaining[1:], self.initializing_blob)
+
 
 class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
@@ -101,7 +105,8 @@ class WorkspaceBucket(BaseAnVILFolder):
             self[_wsbf.name] = _wsbf
         else:
             subname = s[0]+'/'
-            self[subname] = WorkspaceBucketSubFolder(subname, s[1:], bucket_blob)
+            self[subname] = WorkspaceBucketSubFolder(
+                subname, s[1:], bucket_blob)
 
 
 class WorkspaceBucketFile(BaseAnVILFile):
@@ -111,7 +116,7 @@ class WorkspaceBucketFile(BaseAnVILFile):
         self.last_modified = blob.updated
         self.blob_handle = blob
         self.is_dir = False
-    
+
     def get_bytes_handler(self):
         return gscio.Reader(self.blob_handle)
 
@@ -121,10 +126,11 @@ class WorkspaceData(BaseAnVILFile):
         self.name = name
         self.buffer = self._dict_to_buffer(data_dict)
         self.last_modified = None
-    
+
     def _dict_to_buffer(self, d):
-        # only keys that match the below regex are valid 
-        keys = [k for k in d.keys() if bool(re.match("^[A-Za-z0-9_-]*$", k)) ]
+        # only keys that match the below regex are valid
+        keys = [k for k in d.keys() if bool(
+            re.match("^[A-Za-z0-9_-]*$", k))]
         data = ""
         for k in keys:
             data += f"{k}\t{d[k]}\n"

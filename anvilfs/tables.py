@@ -1,14 +1,13 @@
-from time import sleep
-
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
 
 from .google import DRSAnVILFile, LazyDRSAnVILFile
 
+
 class TableEntriesFile(BaseAnVILFile):
     def __init__(self, name, itemsdict):
         self.name = name
-        self.last_modified = "" # #TODO determine if this is ok
+        self.last_modified = ""  # #TODO this or current time?
         string = "\t".join(
                 [f"{x}" for x in itemsdict]
             )
@@ -18,7 +17,7 @@ class TableEntriesFile(BaseAnVILFile):
             )
         self.buffstr = string
         self.size = len(string)
-    
+
     def get_bytes_handler(self):
         return self.string_to_buffer(self.buffstr)
 
@@ -46,8 +45,8 @@ class TableFolder(BaseAnVILFolder):
         self.type = etype
         self.eid = eid
         self.wsref = wsref
-        self.attribs = attribs # column names
-    
+        self.attribs = attribs  # column names
+
     def lazy_init(self):
         self.make_contents()
 
@@ -56,7 +55,8 @@ class TableFolder(BaseAnVILFolder):
             name: [] for name in self.attribs
         }
         has_metadata = False
-        if(set(["file_name", "file_size", "updated_datetime"]).issubset(set(self.attribs))):
+        if(set(["file_name", "file_size", "updated_datetime"]).issubset(
+                set(self.attribs))):
             has_metadata = True
         linked_files = []
         file_links = {}
@@ -67,7 +67,8 @@ class TableFolder(BaseAnVILFolder):
             e_attrs = entry["attributes"]
             # if entry is a cohort with underlying query, add it as a file
             if entry["entityType"] == "cohort" and "query" in e_attrs:
-                linked_files.append(TableDataCohort(entry["name"],e_attrs["query"]))
+                linked_files.append(
+                    TableDataCohort(entry["name"], e_attrs["query"]))
             # for each of the column names
             for attr in self.attribs:
                 addendum = ""
@@ -75,7 +76,8 @@ class TableFolder(BaseAnVILFolder):
                     val = e_attrs[attr]
                     if val is None:
                         val = ""
-                    if type(val) == dict and "itemsType" in val: # if theres more processing, e.g. not a string
+                    # if theres more processing, e.g. not a string
+                    if type(val) == dict and "itemsType" in val:
                         # mere string attributes
                         if val["itemsType"] == "AttributeValue":
                             addendum = ",".join(val["items"])
@@ -87,7 +89,7 @@ class TableFolder(BaseAnVILFolder):
                     else:
                         if type(val) == dict and "entityName" in val:
                             val = val["entityName"]
-                        val = str(val) # enforce string
+                        val = str(val)  # enforce string
                         addendum = val
                         # check if its a linkable file
                         efiletype = self.is_linkable_file(val)
@@ -104,29 +106,29 @@ class TableFolder(BaseAnVILFolder):
                                         e_attrs["file_size"],
                                         e_attrs["updated_datetime"]
                                     ))
-                                # if somehow that information doesn't exist, fall back
+                                # if info doesn't exist, fall back
                                 except KeyError:
                                     file_links[efiletype].append(val)
                             else:
                                 file_links[efiletype].append(val)
                 base_table[attr].append(addendum)
-        
         for method in file_links:
             try:
                 fresh_files = method.factory(file_links[method])
                 linked_files.extend(fresh_files)
             except Exception as e:
-                print(f"AnVILFS ERROR: SKIPPING FILE, could not be resolved due to the following error:")
+                print(f"AnVILFS ERROR: SKIPPING FILE due to error:")
                 print(e)
                 continue
-        # if there are links, make them externally available by entityname_filename.tsv
-        linked_files.append(TableEntriesFile(self.type + "_contents.tsv", base_table))
+        # if there are links, export to tsv
+        linked_files.append(
+            TableEntriesFile(self.type + "_contents.tsv", base_table))
         for f in linked_files:
             self[f.name] = f
 
     def get_entity_info(self):
         resp = self.fapi.get_entities(
-            self.wsref.namespace_name, 
+            self.wsref.namespace_name,
             self.wsref.name,
             self.type)
         if resp.status_code == 200:
@@ -135,15 +137,13 @@ class TableFolder(BaseAnVILFolder):
             resp.raise_for_status()
 
 
-
 class TableDataCohort(BaseAnVILFile):
 
     def __init__(self, name, query):
-        #query = attribs["query"]
         self.name = name + "_query_results.tsv"
-        self.size = 1 # some placeholder? cant lazy load AND init with total size of results
+        self.size = 1  # a placeholder; cant lazy load AND init with size
         self.query = query
-        self.last_modified = "" # #TODO determine if this is ok
+        self.last_modified = ""  # #TODO this or current time?
 
     def get_bytes_handler(self):
         job = self.gc_bigquery_client.query(self.query)

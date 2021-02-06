@@ -1,9 +1,7 @@
 import requests
 import json
-from io import BytesIO
 import concurrent.futures
 
-from google.auth import credentials
 from google.cloud import storage
 
 import gs_chunked_io as gscio
@@ -12,6 +10,7 @@ from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 
 local_cr = ClientRepository()
+
 
 class GoogleAnVILFile(BaseAnVILFile):
     def __init__(self, info):
@@ -34,15 +33,15 @@ class GoogleAnVILFile(BaseAnVILFile):
             self.size = info["size"]
             self.last_modified = info["last_modified"]
         else:
-            raise Exception(f"Unsupported GoogleAnVILFile init content:\n\t{info}")
+            raise Exception(f"Bad GoogleAnVILFile init content:\n\t{info}")
 
     @classmethod
     def factory(cls, gs_uri_list):
         results = []
-        MAX_BATCH_SIZE = 1000 # to avoid error; likely the LAZY_THRESHOLD will be reached first
+        MAX_BATCH_SIZE = 1000  # break into sub batches
         gs_uri_2d_array = []
         sublist = []
-        LAZY_THRESHOLD = 1000 # if bigger than this, metadata is fudged to provide UX quality
+        LAZY_THRESHOLD = 1000  # if exceeded, fudge metadata for UX
         # create list of blob sublists, sublist <= 1000 elements
         if len(gs_uri_list) > LAZY_THRESHOLD:
             return [
@@ -50,16 +49,19 @@ class GoogleAnVILFile(BaseAnVILFile):
             ]
         for gs_uri in gs_uri_list:
             # if max length reached, add it to 2d array
+            sublist.append(cls.uri_to_blob(gs_uri))
             if len(sublist) == MAX_BATCH_SIZE:
                 gs_uri_2d_array.append(sublist)
                 sublist = []
-            sublist.append(cls.uri_to_blob(gs_uri))
+        # add final under-sized batch to list if it exists
+        if sublist:
+            gs_uri_2d_array.append(sublist)
         # perform batch operations
         for batch in gs_uri_2d_array:
             with local_cr.gc_storage_client.batch():
                 for item in batch:
                     item.reload()
-            # now that sub list has been refreshed, create GSOBJ from metadata
+            # sub list has been refreshed, create obj from metadata
             for item in batch:
                 results.append(GoogleAnVILFile({
                     "name": item.name.split("/")[-1],
@@ -68,7 +70,6 @@ class GoogleAnVILFile(BaseAnVILFile):
                     "blob": item
                 }))
         return results
-        
 
     @classmethod
     def uri_to_blob(cls, uri):
@@ -76,14 +77,16 @@ class GoogleAnVILFile(BaseAnVILFile):
         source_bucket = split[2]
         path = "/".join(split[3:])
         uproj = local_cr.gc_storage_client.project
-        bucket = local_cr.gc_storage_client.bucket(source_bucket, user_project=uproj)
+        bucket = local_cr.gc_storage_client.bucket(
+            source_bucket, user_project=uproj)
         return storage.blob.Blob(path, bucket)
 
     def info_to_blob(self, source_bucket, path):
         # requires project, bucket_name, prefix
         uproj = self.gc_storage_client.project
-        bucket = self.gc_storage_client.bucket(source_bucket, user_project=uproj)
-        return storage.blob.Blob(path, bucket)#, chunk_size = chunk_size)
+        bucket = self.gc_storage_client.bucket(
+            source_bucket, user_project=uproj)
+        return storage.blob.Blob(path, bucket)
 
     def get_bytes_handler(self):
         return gscio.Reader(self.blob)
@@ -109,17 +112,18 @@ class LazyGoogleAnVILFile(GoogleAnVILFile):
 
 
 class DRSAnVILFile(GoogleAnVILFile):
-    api_url = "https://us-central1-broad-dsde-prod.cloudfunctions.net/martha_v3"
+    api_url = ("https://us-central1-broad-dsde-prod.cloudfunctions.net/"
+               "martha_v3")
 
     def __init__(self, input):
         token = ClientRepository().get_fapi_token()
         api_url = self.api_url
         response = requests.post(
             api_url,
-            data = {
+            data={
                 "url": input
             },
-            headers = {
+            headers={
                 "Authorization": f"Bearer {token}"
             }
         )
@@ -135,28 +139,31 @@ class DRSAnVILFile(GoogleAnVILFile):
             url = cls.api_url
             r = requests.post(
                     url,
-                    data = {
-                    "url":drsuri
+                    data={
+                        "url": drsuri
                     },
-                    headers = {
+                    headers={
                         "Authorization": f"Bearer {token}"
                     }
                 )
             return json.loads(r.text)
+
         # thread pool maker
         def _pooler(inlist, maxworks=50):
-            timeout = 60#seconds
+            timeout = 60  # seconds
             good_data = []
             bad_uris = []
-            with concurrent.futures.ThreadPoolExecutor(max_workers=maxworks) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=maxworks) as executor:
                 # Start the load operations and mark each future with its URL
-                future_to_url = {executor.submit(_load_url, url, timeout): url for url in inlist}
+                future_to_url = {executor.submit(
+                    _load_url, url, timeout): url for url in inlist}
                 for future in concurrent.futures.as_completed(future_to_url):
                     url = future_to_url[future]
                     try:
                         data = future.result()
                         if "gsUri" not in data:
-                            print(f"DRS resolution error - received:\n\t{data}")
+                            print(f"DRS resolution error- received:\n\t{data}")
                             bad_uris.append(url)
                         else:
                             good_data.append(data)
@@ -184,7 +191,7 @@ class DRSAnVILFile(GoogleAnVILFile):
                 "size": x["size"],
                 "name": x["fileName"],
                 "last_modified": x["timeUpdated"]
-            } 
+            }
             for x in total_goods]
         # make google bucket objects
         for item in gs_info:
@@ -204,7 +211,7 @@ class LazyDRSAnVILFile(DRSAnVILFile):
             self.last_modified = ""
         else:
             self.last_modified = last_modified
-    
+
     def get_bytes_handler(self):
         super().__init__(self.uri)
         return super().get_bytes_handler()

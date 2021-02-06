@@ -27,7 +27,7 @@ class BaseAnVILFile(BaseAnVILResource):
         }
         return Info(result)
 
-    def string_to_buffer(self,string):
+    def string_to_buffer(self, string):
         buffer = BytesIO(string.encode('utf-8'))
         position = buffer.tell()
         buffer.seek(0, SEEK_END)
@@ -36,4 +36,5 @@ class BaseAnVILFile(BaseAnVILResource):
         return buffer
 
     def get_bytes_handler(self):
-        raise NotImplementedError("Abstract method get_bytes_handler() not implemented")
+        raise NotImplementedError(
+            "Abstract method get_bytes_handler() not implemented")

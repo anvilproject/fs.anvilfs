@@ -20,6 +20,7 @@ except yaml.scanner.ScannerError as se:
     print("Configuration file is not valid yaml")
     raise se
 
+
 @pytest.fixture(scope="session")
 def valid_gs_info():
     return conf["anvil_info"]
