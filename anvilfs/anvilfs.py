@@ -14,13 +14,14 @@ class AnVILFS(FS, ClientRepository):
     DEFAULT_API_URL = "https://api.firecloud.org/api/"
 
     def __init__(self, namespace, workspace, api_url=None,
-                 on_anvil=False, drs_resolver_url=None):
+                 on_anvil=False, drs_url=None):
         super(AnVILFS, self).__init__()
         ClientRepository.base_project = namespace
         if not api_url:
             api_url = self.DEFAULT_API_URL
-        if drs_resolver_url:
-            DRSAnVILFile.api_url = drs_resolver_url
+        # the API endpoint where DRS URI resolution requests are sent
+        if drs_url:
+            DRSAnVILFile.api_url = drs_url
         if on_anvil:
             scopes = ['https://www.googleapis.com/auth/userinfo.email',
                       'https://www.googleapis.com/auth/userinfo.profile',
