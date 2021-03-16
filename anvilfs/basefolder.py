@@ -1,4 +1,5 @@
 from fs.enums import ResourceType
+from fs.errors import ResourceReadOnly
 from fs.info import Info
 
 from .baseresource import BaseAnVILResource
@@ -89,6 +90,9 @@ class BaseAnVILFolder(BaseAnVILResource):
             }
         }
         return Info(_result)
+
+    def upload(self, fname, file):
+        raise ResourceReadOnly(f"Error: {self.name} is read-only")
 
     def is_linkable_file(self, fname):
 

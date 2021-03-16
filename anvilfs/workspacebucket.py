@@ -56,7 +56,7 @@ class WorkspaceDataFolder(BaseAnVILFolder):
                 fresh_files = method.factory(files[method])
                 linked_files.extend(fresh_files)
             except Exception as e:
-                print(f"ERROR: SKIPPING FILE due to error:")
+                print("ERROR: SKIPPING FILE due to error:")
                 print(e)
                 continue
         linked_files.append(
@@ -86,10 +86,12 @@ class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
         super().__init__("Files")
         self.bucket_name = bucket_name
+        self.bucket_path = bucket_name + "/Other Data/"
 
     def lazy_init(self):
-        google_bucket = self.gc_storage_client.get_bucket(self.bucket_name)
-        blobs = google_bucket.list_blobs()
+        self.google_bucket = self.gc_storage_client.get_bucket(
+            self.bucket_name)
+        blobs = self.google_bucket.list_blobs()
         self.initialized = True
         for blob in blobs:
             self.insert_file(blob)
@@ -107,6 +109,18 @@ class WorkspaceBucket(BaseAnVILFolder):
             subname = s[0]+'/'
             self[subname] = WorkspaceBucketSubFolder(
                 subname, s[1:], bucket_blob)
+
+    def upload(self, fname, read_file):
+        try:
+            self["google_bucket"]
+        except KeyError:
+            self.google_bucket = self.gc_storage_client.bucket(
+                self.bucket_name)
+        with gscio.Writer(fname, self.google_bucket) as gsw:
+            data = read_file.read(gsw.chunk_size)
+            while data:
+                gsw.write(data)
+                data = read_file.read(gsw.chunk_size)
 
 
 class WorkspaceBucketFile(BaseAnVILFile):

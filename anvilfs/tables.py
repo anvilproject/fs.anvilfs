@@ -117,7 +117,7 @@ class TableFolder(BaseAnVILFolder):
                 fresh_files = method.factory(file_links[method])
                 linked_files.extend(fresh_files)
             except Exception as e:
-                print(f"AnVILFS ERROR: SKIPPING FILE due to error:")
+                print("AnVILFS ERROR: SKIPPING FILE due to error:")
                 print(e)
                 continue
         # if there are links, export to tsv

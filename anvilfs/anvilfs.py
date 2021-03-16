@@ -49,7 +49,7 @@ class AnVILFS(FS, ClientRepository):
         else:
             raise DirectoryExpected(f"{path}")
 
-    def scandir(self, path):
+    def scandir(self, path, **kwargs):
         if path[-1] != "/":
             path = path + "/"
         result = []
@@ -57,6 +57,13 @@ class AnVILFS(FS, ClientRepository):
         for o in dirlist:
             result.append(self.getinfo(path+o))
         return result
+
+    def upload(self, path, file, **kwargs):
+        cleaved = path.rsplit('/', 1)
+        root_dir = cleaved[0] + "/"
+        fname = cleaved[1]
+        root_obj = self.rootobj.get_object_from_path(root_dir)
+        root_obj.upload(fname, file)
 
     def makedir():  # Make a directory.
         raise Exception("makedir not implemented")
