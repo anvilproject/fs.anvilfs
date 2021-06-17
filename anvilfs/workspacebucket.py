@@ -28,7 +28,6 @@ class OtherDataFolder(BaseAnVILFolder):
                 if datum.startswith(blocked):
                     del workspacedata[datum]
         if workspacedata:
-            print(workspacedata)
             wsdf = WorkspaceDataFolder(workspacedata)
             self[wsdf.name] = wsdf
         _wsb = WorkspaceBucket(self.bucket_name)
