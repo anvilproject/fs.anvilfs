@@ -47,7 +47,6 @@ class WorkspaceDataFolder(BaseAnVILFolder):
             if filetype is not None:
                 if filetype not in files:
                     files[filetype] = []
-                print(f"appending {val} to linkable files")
                 files[filetype].append(val)
         linked_files = []
         for method in files:
