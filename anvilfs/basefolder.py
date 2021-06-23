@@ -50,7 +50,8 @@ class BaseAnVILFolder(BaseAnVILResource):
     def keys(self):
         def sorter(k):
             if k[-1] == "/":
-                k = "0"+k
+                # space is first lexicographically
+                k = "      "+k
             return k
         return sorted([k for k in self.children.keys()], key=sorter)
 

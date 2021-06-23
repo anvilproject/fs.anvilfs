@@ -64,20 +64,26 @@ class WorkspaceDataFolder(BaseAnVILFolder):
 
 
 class WorkspaceBucketSubFolder(BaseAnVILFolder):
-    def __init__(self, name, remaining, initializing_blob):
+    def __init__(self, name, bucketpath, bucket_name):
+        self.bucket_name = bucket_name
+        self.files = []
+        self.bucketpath = bucketpath
         super().__init__(name)
-        self.remaining = remaining
-        self.initializing_blob = initializing_blob
 
     def lazy_init(self):
-        if len(self.remaining) == 1:
-            self[self.remaining[0]] = WorkspaceBucketFile(
-                self.initializing_blob)
-            del self.initializing_blob
-        else:
-            subname = self.remaining[0] + '/'
-            self[subname] = WorkspaceBucketSubFolder(
-                subname, self.remaining[1:], self.initializing_blob)
+        pass
+
+    def upload(self, fname, read_file):
+        try:
+            self["google_bucket"]
+        except KeyError:
+            self.google_bucket = self.gc_storage_client.bucket(
+                self.bucket_name)
+        with gscio.Writer(self.bucketpath + fname, self.google_bucket) as gsw:
+            data = read_file.read(gsw.chunk_size)
+            while data:
+                gsw.write(data)
+                data = read_file.read(gsw.chunk_size)
 
 
 class WorkspaceBucket(BaseAnVILFolder):
@@ -97,16 +103,21 @@ class WorkspaceBucket(BaseAnVILFolder):
     def insert_file(self, bucket_blob):
         # name relative to the path from workspace bucket
         path = bucket_blob.name
+        # handle subfolders like base folders -- dunno why google doesn't
+        # e.g., list has a/b/ but not a/ 
         if path[-1] == "/":
-            raise Exception("Files should be set, not folders")
+            return
+            #raise Exception(f"Files should be set, not folders: {path}")
         s = path.split("/")
-        if len(s) == 1:
-            _wsbf = WorkspaceBucketFile(bucket_blob)
-            self[_wsbf.name] = _wsbf
-        else:
-            subname = s[0]+'/'
-            self[subname] = WorkspaceBucketSubFolder(
-                subname, s[1:], bucket_blob)
+        # march to terminal folder, creating along the way
+        current = self
+        for i in range(len(s)-1):
+            subname = s[i]+'/'
+            if subname not in current:
+                dir_path = '/'.join(s[:i+1]) + '/'
+                current[subname] = WorkspaceBucketSubFolder(subname, dir_path, self.bucket_name)
+            current = current[subname]
+        current[s[-1]] = WorkspaceBucketFile(bucket_blob)
 
     def upload(self, fname, read_file):
         try:
