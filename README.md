@@ -11,9 +11,9 @@ Galaxy installation requirements:
   type: anvil
   workspace: <name of the Terra workspace you wish to browse>
   api_url: <OPTIONAL - if not specified default production url will be used>
-  on_anvil: <OPTIONAL - boolean set to false, in place to manage workload identity scopes>
+  on_anvil: <OPTIONAL - (true/false) must be true to manage AnVIL workload identity scopes>
   drs_url: <OPTIONAL - if not specified  default production url will be used>
-  writable: <OPTIONAL - if not specified plugin will be read-only>
+  writable: <OPTIONAL - (true/false) if not specified plugin will be read-only>
 ```
 **NOTE**: `doc` and `id` can be any string you choose but `type` *MUST* be `anvil`
 - `lib/galaxy/files/sources/anvil.py`
