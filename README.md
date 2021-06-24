@@ -13,6 +13,7 @@ Galaxy installation requirements:
   api_url: <OPTIONAL - if not specified default production url will be used>
   on_anvil: <OPTIONAL - boolean set to false, in place to manage workload identity scopes>
   drs_url: <OPTIONAL - if not specified  default production url will be used>
+  writable: <OPTIONAL - if not specified plugin will be read-only>
 ```
 **NOTE**: `doc` and `id` can be any string you choose but `type` *MUST* be `anvil`
 - `lib/galaxy/files/sources/anvil.py`
