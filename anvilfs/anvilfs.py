@@ -3,6 +3,7 @@ from .basefolder import BaseAnVILFolder
 from .google import DRSAnVILFile
 from .namespace import Namespace
 from .workloadidentitycredentials import WorkloadIdentityCredentials
+from .workspacebucket import WorkspaceBucket, WorkspaceBucketSubFolder
 
 from google.auth.transport.requests import AuthorizedSession
 
@@ -19,6 +20,8 @@ class AnVILFS(FS, ClientRepository):
         ClientRepository.base_project = namespace
         if not api_url:
             api_url = self.DEFAULT_API_URL
+        else:
+            self.fapi.fcconfig.set_root_url(api_url)
         # the API endpoint where DRS URI resolution requests are sent
         if drs_url:
             DRSAnVILFile.api_url = drs_url
@@ -28,7 +31,6 @@ class AnVILFS(FS, ClientRepository):
                       'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
-            self.fapi.fcconfig.set_root_url(api_url)
         self.namespace = Namespace(namespace, [workspace])
         self.workspace = self.namespace[workspace+"/"]
         self.rootobj = self.workspace  # edit to make namespace root
@@ -49,6 +51,14 @@ class AnVILFS(FS, ClientRepository):
         else:
             raise DirectoryExpected(f"{path}")
 
+    def isdir(self, path):
+        if path == "" or path[-1] != "/":
+            path += "/"
+        try:
+            return self.getinfo(path).is_dir
+        except ResourceNotFound:
+            return False
+
     def scandir(self, path, **kwargs):
         if path[-1] != "/":
             path = path + "/"
@@ -65,8 +75,42 @@ class AnVILFS(FS, ClientRepository):
         root_obj = self.rootobj.get_object_from_path(root_dir)
         root_obj.upload(fname, file)
 
-    def makedir():  # Make a directory.
+    def makedir(self, path, **kwargs):  # Make a directory.
         raise Exception("makedir not implemented")
+
+    def makedirs(self, path, **kwargs):  # Make directories.
+        # google bucket 'directories' are just components of a filename,
+        #   e.g. you cannot have an empty directory. so, making
+        #   directories is entirely local to the plugin until file upload.
+        #   here we just go through the objects to ensure that the last
+        #   existent directory is a google bucket location and make the
+        #   subdirs, but upload must 'create' the subdirs itself
+        # strip leading and lagging slashes
+        if path and path[0] == "/":
+            path = path[1:]
+        if path and path[-1] == "/":
+            path = path[:-1]
+        root_obj = self.rootobj
+        dirs = path.split("/")
+        if "" in dirs:
+            raise Exception("Empty directory name in path " + 
+                f"{path} not supported")
+        for d in dirs:
+            try:
+                root_obj = root_obj[d + "/"]
+            except KeyError:
+                t = type(root_obj)
+                if  t != WorkspaceBucket and t != WorkspaceBucketSubFolder:
+                    raise Exception("Only workspace bucket files are writable")
+                prev_bucketpath = root_obj.bucketpath
+                bucketname = root_obj.bucket_name
+                new_dir = WorkspaceBucketSubFolder(d, prev_bucketpath + d + "/",
+                    bucketname)
+                root_obj[d + "/"] = new_dir
+                root_obj = root_obj[d + "/"]
+        return
+                
+        
 
     def openbin(self, path, mode="r", buffering=-1, **options):
         obj = self.rootobj.get_object_from_path(path)

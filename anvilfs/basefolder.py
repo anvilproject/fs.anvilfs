@@ -1,5 +1,5 @@
 from fs.enums import ResourceType
-from fs.errors import ResourceReadOnly
+from fs.errors import ResourceReadOnly, ResourceNotFound
 from fs.info import Info
 
 from .baseresource import BaseAnVILResource
@@ -73,7 +73,10 @@ class BaseAnVILFolder(BaseAnVILResource):
                 split[i] += "/"
         base_obj = self
         for component in split:
-            base_obj = base_obj[component]
+            try:
+                base_obj = base_obj[component]
+            except KeyError:
+                raise ResourceNotFound("Resource {} not found".format(path))
         return base_obj
 
     def __setitem__(self, key, val):
