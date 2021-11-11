@@ -4,3 +4,4 @@ tests/__pycache__/
 build/
 dist/
 anvilfs/tests/config.yml
+.venv/
