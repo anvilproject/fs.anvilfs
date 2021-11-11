@@ -1,0 +1,3 @@
+[console_scripts]
+tnu = terra_notebook_utils.cli.main:main
+

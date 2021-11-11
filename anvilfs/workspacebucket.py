@@ -90,7 +90,7 @@ class WorkspaceBucket(BaseAnVILFolder):
     def __init__(self, bucket_name):
         super().__init__("Files")
         self.bucket_name = bucket_name
-        self.bucket_path = bucket_name + "/Other Data/"
+        self.bucketpath = ""
 
     def lazy_init(self):
         self.google_bucket = self.gc_storage_client.get_bucket(
