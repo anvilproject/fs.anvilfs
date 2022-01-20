@@ -11,6 +11,8 @@ class Workspace(BaseAnVILFolder):
         resp = self.fetch_api_info(workspace_name)
         self.bucket_name = resp["workspace"]["bucketName"]
         self.attributes = resp["workspace"]["attributes"]
+        self.google_project = resp["workspace"]["googleProject"]
+        self.access_level = resp["accessLevel"]
         try:
             super().__init__(
                 workspace_name, resp["workspace"]["lastModified"])
@@ -74,7 +76,8 @@ class Workspace(BaseAnVILFolder):
 
     def fetch_api_info(self, workspace_name):
         fields = ("workspace.attributes,workspace.bucketName,"
-                  "workspace.lastModified")
+                  "workspace.lastModified,workspace.googleProject,"
+                  "accessLevel")
         resp = self.fapi.get_workspace(
             namespace=self.namespace_name, workspace=workspace_name,
             fields=fields)
