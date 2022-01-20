@@ -17,7 +17,6 @@ class AnVILFS(FS, ClientRepository):
     def __init__(self, namespace, workspace, api_url=None,
                  on_anvil=False, drs_url=None):
         super(AnVILFS, self).__init__()
-        ClientRepository.base_project = namespace
         if not api_url:
             api_url = self.DEFAULT_API_URL
         else:
@@ -33,7 +32,12 @@ class AnVILFS(FS, ClientRepository):
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
         self.namespace = Namespace(namespace, [workspace])
         self.workspace = self.namespace[workspace+"/"]
-        self.rootobj = self.workspace  # edit to make namespace root
+        # if OWNER or PROJECT_OWNER
+        if self.workspace.access_level.lower() in ("owner", "project_owner"):
+            # still determining when this should be used instead of billing...
+            ClientRepository.workspace_project = self.workspace.google_project
+        # set workspace to root dir
+        self.rootobj = self.workspace
 
     def getinfo(self, path, namespaces=None):
         return self.rootobj.get_object_from_path(path).getinfo()
