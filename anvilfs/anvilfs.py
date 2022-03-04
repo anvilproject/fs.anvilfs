@@ -17,6 +17,12 @@ class AnVILFS(FS, ClientRepository):
     def __init__(self, namespace, workspace, api_url=None,
                  on_anvil=False, drs_url=None):
         super(AnVILFS, self).__init__()
+        # ensure there is a firecloud api session to mine for info
+        self.fapi._set_session()
+        fapi_project = self.fapi.__getattribute__("__SESSION").credentials.quota_project_id
+        if fapi_project:
+            ClientRepository.base_project = fapi_project
+        # deal with custom API URL
         if not api_url:
             api_url = self.DEFAULT_API_URL
         else:
@@ -30,11 +36,11 @@ class AnVILFS(FS, ClientRepository):
                       'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
+        
         self.namespace = Namespace(namespace, [workspace])
         self.workspace = self.namespace[workspace+"/"]
         # if OWNER or PROJECT_OWNER
         if self.workspace.access_level.lower() in ("owner", "project_owner"):
-            # still determining when this should be used instead of billing...
             ClientRepository.workspace_project = self.workspace.google_project
         # set workspace to root dir
         self.rootobj = self.workspace
