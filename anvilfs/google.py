@@ -3,24 +3,31 @@ import json
 import concurrent.futures
 
 from google.cloud import storage
+from google.oauth2 import service_account
 
 import gs_chunked_io as gscio
 
 from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 
-local_cr = ClientRepository()
+#local_cr = ClientRepository()
 
 
 class GoogleAnVILFile(BaseAnVILFile):
-    def __init__(self, info):
+    def __init__(self, info, creds=None):
         kb = 1024
         mb = 1024*kb
         self.chunk_size = 200*mb
 
+        self.gs_client = None
+
+        if creds:
+            self.gs_client = storage.client.Client(project=self.base_project, credentials=creds)
+        else:
+            self.gs_client = self.gc_storage_client
         if type(info) == str and info.startswith("gs://"):
-            self.blob = self.uri_to_blob(info)
-            self.blob.reload()
+            self.blob = self.uri_to_blob(info, self.gs_client)
+            self.blob.reload(client=self.gs_client)
             self.size = self.blob.size
             self.last_modified = self.blob.updated
             self.name = info.split("/")[-1]
@@ -58,7 +65,8 @@ class GoogleAnVILFile(BaseAnVILFile):
             gs_uri_2d_array.append(sublist)
         # perform batch operations
         for batch in gs_uri_2d_array:
-            with local_cr.gc_storage_client.batch():
+            batch_client = cls.get_default_gcs_client()
+            with batch_client.batch():
                 for item in batch:
                     item.reload()
             # sub list has been refreshed, create obj from metadata
@@ -72,19 +80,21 @@ class GoogleAnVILFile(BaseAnVILFile):
         return results
 
     @classmethod
-    def uri_to_blob(cls, uri):
+    def uri_to_blob(cls, uri, client=None):
+        if not client:
+            client = cls.get_default_gcs_client()
         split = uri.split("/")
         source_bucket = split[2]
         path = "/".join(split[3:])
-        uproj = local_cr.gc_storage_client.project
-        bucket = local_cr.gc_storage_client.bucket(
+        uproj = client.project
+        bucket = client.bucket(
             source_bucket, user_project=uproj)
         return storage.blob.Blob(path, bucket)
 
     def info_to_blob(self, source_bucket, path):
         # requires project, bucket_name, prefix
-        uproj = self.gc_storage_client.project
-        bucket = self.gc_storage_client.bucket(
+        uproj = self.gs_client.project
+        bucket = self.gs_client.bucket(
             source_bucket, user_project=uproj)
         return storage.blob.Blob(path, bucket)
 
@@ -115,6 +125,11 @@ class DRSAnVILFile(GoogleAnVILFile):
     api_url = ("https://us-central1-broad-dsde-prod.cloudfunctions.net/"
                "martha_v3")
 
+    @classmethod
+    def create_sa_creds(cls, sa_info):
+        sa_creds = service_account.Credentials.from_service_account_info(sa_info)
+        return sa_creds
+
     def __init__(self, input):
         token = ClientRepository().get_fapi_token()
         api_url = self.api_url
@@ -128,8 +143,10 @@ class DRSAnVILFile(GoogleAnVILFile):
             }
         )
         result = json.loads(response.text)
+        sa_data = result["googleServiceAccount"]["data"]
         gurl = result["gsUri"]
-        super().__init__(gurl)
+        creds = service_account.Credentials.from_service_account_info(sa_data)
+        super().__init__(gurl, creds=creds)
 
     @classmethod
     def factory(cls, drslist):
@@ -184,18 +201,21 @@ class DRSAnVILFile(GoogleAnVILFile):
             print(f"Unable to resolve the following URIs:\n{bad_retries}")
         total_goods = good + good_retries
         gs_info = [
-            {
-                "gsUri": x["gsUri"],
-                "bucket": x["bucket"],
-                "path": x["name"],
-                "size": x["size"],
-                "name": x["fileName"],
-                "last_modified": x["timeUpdated"]
-            }
+            (
+                {
+                    "gsUri": x["gsUri"],
+                    "bucket": x["bucket"],
+                    "path": x["name"],
+                    "size": x["size"],
+                    "name": x["fileName"],
+                    "last_modified": x["timeUpdated"]
+                }, 
+                cls.create_sa_creds(x["googleServiceAccount"]["data"])
+            )
             for x in total_goods]
         # make google bucket objects
         for item in gs_info:
-            file_objects.append(GoogleAnVILFile(item))
+            file_objects.append(GoogleAnVILFile(item[0], item[1]))
         return file_objects
 
 
