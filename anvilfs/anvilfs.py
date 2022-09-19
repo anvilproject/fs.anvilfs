@@ -1,6 +1,7 @@
 from .clientrepository import ClientRepository
 from .basefolder import BaseAnVILFolder
-from .google import DRSAnVILFile
+from .baseresource import BaseAnVILResource
+from .drs import DRSAnVILFile
 from .namespace import Namespace
 from .workloadidentitycredentials import WorkloadIdentityCredentials
 from .workspacebucket import WorkspaceBucket, WorkspaceBucketSubFolder
@@ -28,8 +29,12 @@ class AnVILFS(FS, ClientRepository):
         else:
             self.fapi.fcconfig.set_root_url(api_url)
         # the API endpoint where DRS URI resolution requests are sent
-        if drs_url:
-            DRSAnVILFile.api_url = drs_url
+        #if drs_url:
+        #    DRSAnVILFile.api_url = drs_url
+
+        # Load the base resource object with info:
+        BaseAnVILResource.workspace = workspace
+        BaseAnVILResource.namespace = namespace
         if on_anvil:
             scopes = ['https://www.googleapis.com/auth/userinfo.email',
                       'https://www.googleapis.com/auth/userinfo.profile',

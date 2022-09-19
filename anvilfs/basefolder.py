@@ -3,7 +3,8 @@ from fs.errors import ResourceReadOnly, ResourceNotFound
 from fs.info import Info
 
 from .baseresource import BaseAnVILResource
-from .google import GoogleAnVILFile, DRSAnVILFile
+from .drs import DRSAnVILFile
+from .google import GoogleAnVILFile
 
 
 class BaseAnVILFolder(BaseAnVILResource):

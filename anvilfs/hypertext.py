@@ -1,4 +1,5 @@
-import requests
+import getm
+
 from io import BytesIO
 
 from .basefile import BaseAnVILFile
@@ -21,7 +22,7 @@ class HypertextAnVILFile(BaseAnVILFile):
                 self.last_modified = ""
 
     def get_bytes_handler(self):
-        return BytesIO(requests.get(self.url).content)
+        return getm.urlopen(self.url)
 
     @classmethod
     def factory(cls, urllist):

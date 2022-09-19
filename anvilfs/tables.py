@@ -1,7 +1,7 @@
 from .basefile import BaseAnVILFile
 from .basefolder import BaseAnVILFolder
 
-from .google import DRSAnVILFile, LazyDRSAnVILFile
+from .drs import DRSAnVILFile, LazyDRSAnVILFile
 
 
 class TableEntriesFile(BaseAnVILFile):
@@ -74,6 +74,7 @@ class TableFolder(BaseAnVILFolder):
                 addendum = ""
                 if attr in e_attrs:
                     val = e_attrs[attr]
+                    print(f"!! --- {val}")
                     if val is None:
                         val = ""
                     # if theres more processing, e.g. not a string
@@ -113,13 +114,18 @@ class TableFolder(BaseAnVILFolder):
                                 file_links[efiletype].append(val)
                 base_table[attr].append(addendum)
         for method in file_links:
-            try:
-                fresh_files = method.factory(file_links[method])
-                linked_files.extend(fresh_files)
-            except Exception as e:
-                print("AnVILFS ERROR: SKIPPING FILE due to error:")
-                print(e)
-                continue
+            print(f"fl: --- {file_links[method]}")
+            # try:
+            #     fresh_files = method.factory(file_links[method])
+            #     linked_files.extend(fresh_files)
+            fresh_files = method.factory(file_links[method])
+            for f in fresh_files:
+                print(f"factory files: -- {f}\n")
+            linked_files.extend(fresh_files)
+            # except Exception as e:
+            #     print("AnVILFS ERROR: SKIPPING FILE due to error:")
+            #     print(e)
+            #     continue
         # if there are links, export to tsv
         linked_files.append(
             TableEntriesFile(self.type + "_contents.tsv", base_table))
