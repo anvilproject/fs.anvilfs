@@ -4,13 +4,12 @@ import concurrent.futures
 
 from google.cloud import storage
 from google.oauth2 import service_account
+from google.api_core.exceptions import NotFound
 
 import gs_chunked_io as gscio
 
 from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
-
-#local_cr = ClientRepository()
 
 
 class GoogleAnVILFile(BaseAnVILFile):
@@ -66,17 +65,26 @@ class GoogleAnVILFile(BaseAnVILFile):
         # perform batch operations
         for batch in gs_uri_2d_array:
             batch_client = cls.get_default_gcs_client()
-            with batch_client.batch():
-                for item in batch:
-                    item.reload()
+            good_items = []
+            try:
+                with batch_client.batch():
+                    for item in batch:
+                        item.reload()
+                        good_items.append(item)
+            except NotFound:
+                print("AnVILFS Error: dead links found in batch")
             # sub list has been refreshed, create obj from metadata
-            for item in batch:
-                results.append(GoogleAnVILFile({
-                    "name": item.name.split("/")[-1],
-                    "last_modified": item.updated,
-                    "size": item.size,
-                    "blob": item
-                }))
+            for item in good_items:
+                try:
+                    results.append(GoogleAnVILFile({
+                        "name": item.name.split("/")[-1],
+                        "last_modified": item.updated,
+                        "size": item.size,
+                        "blob": item
+                    }))
+                except KeyError:
+                    # failed batch items raise KeyErrors, so they're skipped
+                    continue
         return results
 
     @classmethod
@@ -209,7 +217,7 @@ class DRSAnVILFile(GoogleAnVILFile):
                     "size": x["size"],
                     "name": x["fileName"],
                     "last_modified": x["timeUpdated"]
-                }, 
+                },
                 cls.create_sa_creds(x["googleServiceAccount"]["data"])
             )
             for x in total_goods]
