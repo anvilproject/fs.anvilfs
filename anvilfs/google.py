@@ -11,8 +11,6 @@ from .basefile import BaseAnVILFile
 from .clientrepository import ClientRepository
 from .hypertext import HypertextAnVILFile
 
-#local_cr = ClientRepository()
-
 
 class GoogleAnVILFile(BaseAnVILFile):
     def __init__(self, info, creds=None):
@@ -72,31 +70,22 @@ class GoogleAnVILFile(BaseAnVILFile):
             try:
                 with batch_client.batch():
                     for item in batch:
-                    #try:
                         item.reload()
                         good_items.append(item)
-                    #except NotFound as nf:
-                        pass
-                        #print(nf)
-                        #bad_items.append(item)
-            except NotFound as nf:
-                bad_file = str(nf).split('/')[-1]
-                print(f"nf error: {bad_file}")
-            #print(f"good items? {good_items}")
+            except NotFound:
+                print("AnVILFS Error: dead links found in batch")
             # sub list has been refreshed, create obj from metadata
-            #print(f"good items {good_items}")
             for item in good_items:
                 try:
-                    print(f"gf item: {item}")
-                except KeyError as ke:
-                    print("skipping this?")
+                    results.append(GoogleAnVILFile({
+                        "name": item.name.split("/")[-1],
+                        "last_modified": item.updated,
+                        "size": item.size,
+                        "blob": item
+                    }))
+                except KeyError:
+                    # failed batch items raise KeyErrors, so they're skipped
                     continue
-                results.append(GoogleAnVILFile({
-                    "name": item.name.split("/")[-1],
-                    "last_modified": item.updated,
-                    "size": item.size,
-                    "blob": item
-                }))
         return results
 
     @classmethod

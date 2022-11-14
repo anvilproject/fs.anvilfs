@@ -7,6 +7,7 @@ from .basefile import BaseAnVILFile
 
 class HypertextAnVILFile(BaseAnVILFile):
     def __init__(self, url, name=None, size=None, last_modified=None):
+        print(f"hypertext URL recieved: {url}")
         self.url = url
         if not name:
             self.name = url.split("/")[-1]

@@ -1,6 +1,6 @@
 from terra_notebook_utils import drs
 import concurrent.futures
-import dateutil
+import dateutil.parser
 from .hypertext import HypertextAnVILFile
 
 
@@ -67,7 +67,7 @@ class DRSAnVILFile(HypertextAnVILFile):
 
     def get_bytes_handler(self):
         super().__init__(
-            drs.access(self.uri, self.workspace, self.namespace),
+            drs.access(self.uri, self.workspace, self.namespace, self.workspace_project),
             self.name,
             self.size,
             self.last_modified
