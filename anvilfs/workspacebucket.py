@@ -104,10 +104,9 @@ class WorkspaceBucket(BaseAnVILFolder):
         # name relative to the path from workspace bucket
         path = bucket_blob.name
         # handle subfolders like base folders -- dunno why google doesn't
-        # e.g., list has a/b/ but not a/ 
+        # e.g., list has a/b/ but not a/
         if path[-1] == "/":
             return
-            #raise Exception(f"Files should be set, not folders: {path}")
         s = path.split("/")
         # march to terminal folder, creating along the way
         current = self
@@ -115,7 +114,8 @@ class WorkspaceBucket(BaseAnVILFolder):
             subname = s[i]+'/'
             if subname not in current:
                 dir_path = '/'.join(s[:i+1]) + '/'
-                current[subname] = WorkspaceBucketSubFolder(subname, dir_path, self.bucket_name)
+                current[subname] = WorkspaceBucketSubFolder(
+                    subname, dir_path, self.bucket_name)
             current = current[subname]
         current[s[-1]] = WorkspaceBucketFile(bucket_blob)
 

@@ -1,7 +1,6 @@
 from .clientrepository import ClientRepository
 from .basefolder import BaseAnVILFolder
 from .baseresource import BaseAnVILResource
-from .drs import DRSAnVILFile
 from .namespace import Namespace
 from .workloadidentitycredentials import WorkloadIdentityCredentials
 from .workspacebucket import WorkspaceBucket, WorkspaceBucketSubFolder
@@ -20,7 +19,8 @@ class AnVILFS(FS, ClientRepository):
         super(AnVILFS, self).__init__()
         # ensure there is a firecloud api session to mine for info
         self.fapi._set_session()
-        fapi_project = self.fapi.__getattribute__("__SESSION").credentials.quota_project_id
+        fapi_project = self.fapi.__getattribute__(
+            "__SESSION").credentials.quota_project_id
         if fapi_project:
             ClientRepository.base_project = fapi_project
         # deal with custom API URL
@@ -28,9 +28,6 @@ class AnVILFS(FS, ClientRepository):
             api_url = self.DEFAULT_API_URL
         else:
             self.fapi.fcconfig.set_root_url(api_url)
-        # the API endpoint where DRS URI resolution requests are sent
-        #if drs_url:
-        #    DRSAnVILFile.api_url = drs_url
 
         # Load the base resource object with info:
         BaseAnVILResource.workspace = workspace
@@ -41,7 +38,7 @@ class AnVILFS(FS, ClientRepository):
                       'https://www.googleapis.com/auth/cloud-platform']
             credentials = WorkloadIdentityCredentials(scopes=scopes)
             self.fapi.__setattr__("__SESSION", AuthorizedSession(credentials))
-        
+
         self.namespace = Namespace(namespace, [workspace])
         self.workspace = self.namespace[workspace+"/"]
         # if OWNER or PROJECT_OWNER
@@ -108,24 +105,24 @@ class AnVILFS(FS, ClientRepository):
         root_obj = self.rootobj
         dirs = path.split("/")
         if "" in dirs:
-            raise Exception("Empty directory name in path " + 
-                f"{path} not supported")
+            raise Exception("Empty directory name in path " +
+                            f"{path} not supported")
         for d in dirs:
             try:
                 root_obj = root_obj[d + "/"]
             except KeyError:
                 t = type(root_obj)
-                if  t != WorkspaceBucket and t != WorkspaceBucketSubFolder:
+                if t != WorkspaceBucket and t != WorkspaceBucketSubFolder:
                     raise Exception("Only workspace bucket files are writable")
                 prev_bucketpath = root_obj.bucketpath
                 bucketname = root_obj.bucket_name
-                new_dir = WorkspaceBucketSubFolder(d, prev_bucketpath + d + "/",
+                new_dir = WorkspaceBucketSubFolder(
+                    d,
+                    prev_bucketpath + d + "/",
                     bucketname)
                 root_obj[d + "/"] = new_dir
                 root_obj = root_obj[d + "/"]
         return
-                
-        
 
     def openbin(self, path, mode="r", buffering=-1, **options):
         obj = self.rootobj.get_object_from_path(path)

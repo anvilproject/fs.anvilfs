@@ -22,12 +22,17 @@ class ClientRepository:
             # if it's user's personal workspace use their project
             if self.workspace_project:
                 self.base_project = self.workspace_project
-                self._refs[ref] = self._ref_inits[ref](project=self.base_project)
+                self._refs[ref] = self._ref_inits[ref](
+                    project=self.base_project)
             # otherwise use whatever firecloud is using
             elif self.base_project:
-                self._refs[ref] = self._ref_inits[ref](project=self.base_project)
+                self._refs[ref] = self._ref_inits[ref](
+                    project=self.base_project)
             else:
-                raise Exception(f"Should have found a project in:\n\t{self.base_project}\n\t{self.workspace_project}")
+                raise Exception((
+                    f"Should have found a project in:\n"
+                    f"\t{self.base_project}\n"
+                    f"\t{self.workspace_project}"))
         return self._refs[ref]
 
     @classmethod

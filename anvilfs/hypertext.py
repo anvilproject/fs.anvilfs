@@ -1,13 +1,12 @@
 import getm
-
-from io import BytesIO
+import requests
 
 from .basefile import BaseAnVILFile
 
 
 class HypertextAnVILFile(BaseAnVILFile):
     def __init__(self, url, name=None, size=None, last_modified=None):
-        print(f"hypertext URL recieved: {url}")
+        print(f"hypertext URL received: {url}")
         self.url = url
         if not name:
             self.name = url.split("/")[-1]

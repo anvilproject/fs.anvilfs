@@ -1,15 +1,8 @@
-import requests
-import json
-import concurrent.futures
-
 from google.cloud import storage
-from google.oauth2 import service_account
 from google.api_core.exceptions import NotFound
 import gs_chunked_io as gscio
 
 from .basefile import BaseAnVILFile
-from .clientrepository import ClientRepository
-from .hypertext import HypertextAnVILFile
 
 
 class GoogleAnVILFile(BaseAnVILFile):
@@ -22,7 +15,8 @@ class GoogleAnVILFile(BaseAnVILFile):
         self.gs_client = None
 
         if creds:
-            self.gs_client = storage.client.Client(project=self.base_project, credentials=creds)
+            self.gs_client = storage.client.Client(
+                project=self.base_project, credentials=creds)
         else:
             self.gs_client = self.gc_storage_client
         if type(info) == str and info.startswith("gs://"):

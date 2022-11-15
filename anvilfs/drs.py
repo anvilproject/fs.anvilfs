@@ -5,13 +5,6 @@ from .hypertext import HypertextAnVILFile
 
 
 class DRSAnVILFile(HypertextAnVILFile):
-    # api_url = ("https://us-central1-broad-dsde-prod.cloudfunctions.net/"
-    #            "martha_v3")
-
-    # @classmethod
-    # def create_sa_creds(cls, sa_info):
-    #     sa_creds = service_account.Credentials.from_service_account_info(sa_info)
-    #     return sa_creds
 
     def __init__(self, drs_uri, preloaded_info=None):
         info = preloaded_info or drs.get_drs_info(drs_uri)
@@ -67,7 +60,11 @@ class DRSAnVILFile(HypertextAnVILFile):
 
     def get_bytes_handler(self):
         super().__init__(
-            drs.access(self.uri, self.workspace, self.namespace, self.workspace_project),
+            drs.access(
+                self.uri,
+                self.workspace,
+                self.namespace,
+                self.workspace_project),
             self.name,
             self.size,
             self.last_modified
