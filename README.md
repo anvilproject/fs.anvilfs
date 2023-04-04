@@ -15,15 +15,19 @@ Galaxy installation requirements:
   drs_url: <OPTIONAL - if not specified  default production url will be used>
   writable: <OPTIONAL - (true/false) if not specified plugin will be read-only>
 ```
-**NOTE**: `doc` and `id` can be any string you choose but `type` *MUST* be `anvil`
-- `lib/galaxy/files/sources/anvil.py`
-  - see included `anvil.py`
+
+**NOTES**: 
+- `doc` and `id` can be any string you choose but `type` *MUST* be `anvil`
+- for off-AnVIL use, Galaxy and Data Fetch tools require the following environment variables:
+  - `GOOGLE_APPLICATION_CREDENTIALS="<path to credentials json>"`
+  - `TERRA_NOTEBOOK_GOOGLE_ACCESS_TOKEN="$(gcloud auth print-access-token)"`
 
 
-
-Dependency requirements:
+Dependencies:
 - [FISS -- (Fi)reCloud (S)ervice (S)elector python library](https://github.com/broadinstitute/fiss)
-- Google Cloud Python client library
+- [Google Cloud Python client library](https://cloud.google.com/python/docs/reference/storage/latest)
 - Google Cloud SDK
-  - configured with AnVIL project
+  - authenticated / configured with AnVIL project
+- [terra-notebook-utils](https://github.com/DataBiosphere/terra-notebook-utils)
 - [gs-chunked-io](https://github.com/xbrianh/gs-chunked-io)
+- [getm](https://github.com/DataBiosphere/getm)
