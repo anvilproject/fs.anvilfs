@@ -150,7 +150,9 @@ setup(
             'fs',
             'google-cloud-storage',
             'google-cloud-bigquery',
-            'gs-chunked-io'
+            'gs-chunked-io',
+            'terra-notebook-utils >=0.10.0, <0.12.0',
+            'getm >=0.0.4, <0.1.0'
       ],
 
     # List additional groups of dependencies here (e.g. development
