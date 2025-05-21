@@ -6,3 +6,4 @@ gs-chunked-io
 pytest
 terra-notebook-utils >=0.10.0, < 0.12.0
 getm >= 0.0.4, < 0.1.0
+setuptools <= 80.0.0
