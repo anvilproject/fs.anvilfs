@@ -41,7 +41,11 @@ class AnVILFS(FS, ClientRepository):
 
         self.namespace = Namespace(namespace, [workspace])
         self.workspace = self.namespace[workspace+"/"]
-        # if OWNER or PROJECT_OWNER
+        ClientRepository.workspace_label = f"{namespace}/{workspace}"
+        ClientRepository.workspace_access_level = self.workspace.access_level
+        ClientRepository.workspace_google_project = \
+            self.workspace.google_project
+        # only an owner may bill against the workspace's own project
         if self.workspace.access_level.lower() in ("owner", "project_owner"):
             ClientRepository.workspace_project = self.workspace.google_project
         # set workspace to root dir

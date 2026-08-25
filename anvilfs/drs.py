@@ -64,7 +64,7 @@ class DRSAnVILFile(HypertextAnVILFile):
                 self.uri,
                 self.workspace,
                 self.namespace,
-                self.workspace_project),
+                self.resolve_billing_project()),
             self.name,
             self.size,
             self.last_modified
