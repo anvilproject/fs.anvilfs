@@ -16,7 +16,8 @@ class GoogleAnVILFile(BaseAnVILFile):
 
         if creds:
             self.gs_client = storage.client.Client(
-                project=self.base_project, credentials=creds)
+                project=self.resolve_billing_project(),
+                credentials=creds)
         else:
             self.gs_client = self.gc_storage_client
         if type(info) == str and info.startswith("gs://"):
