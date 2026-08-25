@@ -1,0 +1,55 @@
+name: Release
+
+# Tags are bare versions, e.g. 0.2.6
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 0.2.5 reached PyPI without a matching tag; fail loudly rather than
+      # publish a version nobody can trace back to a commit
+      - name: Verify the tag matches the packaged version
+        run: |
+          packaged=$(python -c 'from anvilfs.__about__ import __version__; print(__version__)')
+          if [ "$GITHUB_REF_NAME" != "$packaged" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match anvilfs/__about__.py version $packaged"
+            exit 1
+          fi
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # trusted publishing mints a short-lived token from this, so no PyPI
+    # secret is stored anywhere
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
