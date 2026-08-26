@@ -31,3 +31,20 @@ Dependencies:
 - [terra-notebook-utils](https://github.com/DataBiosphere/terra-notebook-utils)
 - [gs-chunked-io](https://github.com/xbrianh/gs-chunked-io)
 - [getm](https://github.com/DataBiosphere/getm)
+
+Releasing:
+- Pushing a version tag such as `0.2.7` builds the sdist and wheel and
+  publishes them to [PyPI](https://pypi.org/project/fs.anvilfs/) via the
+  `Release` GitHub Actions workflow. Nothing else publishes; there is no
+  manual upload step.
+- The tag must equal `__version__` in `anvilfs/__about__.py` or the
+  workflow fails before building, so bump the version and merge it first,
+  then tag the merge commit:
+  ```
+  git checkout dev && git pull
+  git tag 0.2.7 && git push origin 0.2.7
+  ```
+- Only bare `N.N.N` tags trigger a release.
+- Uploads use PyPI
+  [trusted publishing](https://docs.pypi.org/trusted-publishers/), so no
+  API token is stored in the repository.
