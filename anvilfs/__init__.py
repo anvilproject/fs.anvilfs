@@ -1,8 +1,6 @@
 import configparser
 import inspect
 
-from urllib3.util.retry import Retry
-
 # Both shims below work around dependencies that no longer import on modern
 # runtimes and have no fixed release. They run here rather than in the modules
 # that trigger them so they apply ahead of every submodule, whatever the import
@@ -29,11 +27,22 @@ def _translate_method_whitelist(original_init):
     return retry_init
 
 
-# getm builds Retry(method_whitelist=["HEAD", "GET"]) at import time. urllib3
-# renamed that argument to allowed_methods in 1.26 and removed it in 2.0, so
-# translate the keyword; pinning urllib3<2 is not an option in a Galaxy
-# process. Remove once getm ships a fix; 0.0.5, the latest, still uses the old
-# name.
-if not getattr(Retry.__init__, "anvilfs_translates_method_whitelist", False):
-    if "method_whitelist" not in inspect.signature(Retry.__init__).parameters:
-        Retry.__init__ = _translate_method_whitelist(Retry.__init__)
+def _install_retry_shim():
+    # getm builds Retry(method_whitelist=["HEAD", "GET"]) at import time.
+    # urllib3 renamed that argument to allowed_methods in 1.26 and removed it
+    # in 2.0, so translate the keyword; pinning urllib3<2 is not an option in a
+    # Galaxy process. Remove once getm ships a fix; 0.0.5, the latest, still
+    # uses the old name.
+    try:
+        from urllib3.util.retry import Retry
+    except ImportError:
+        # absent while the package is being built, when nothing needs shimming
+        return
+    if getattr(Retry.__init__, "anvilfs_translates_method_whitelist", False):
+        return
+    if "method_whitelist" in inspect.signature(Retry.__init__).parameters:
+        return
+    Retry.__init__ = _translate_method_whitelist(Retry.__init__)
+
+
+_install_retry_shim()
