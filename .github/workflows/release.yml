@@ -21,7 +21,7 @@ jobs:
       # publish a version nobody can trace back to a commit
       - name: Verify the tag matches the packaged version
         run: |
-          packaged=$(python -c 'from anvilfs.__about__ import __version__; print(__version__)')
+          packaged=$(python -c "about = {}; exec(open('anvilfs/__about__.py').read(), about); print(about['__version__'])")
           if [ "$GITHUB_REF_NAME" != "$packaged" ]; then
             echo "::error::tag $GITHUB_REF_NAME does not match anvilfs/__about__.py version $packaged"
             exit 1

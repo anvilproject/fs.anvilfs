@@ -8,9 +8,14 @@ https://packaging.python.org/guides/distributing-packages-using-setuptools/
 from setuptools import setup, find_packages
 import pathlib
 
-from anvilfs.__about__ import __version__
-
 here = pathlib.Path(__file__).parent.resolve()
+
+# read rather than import: importing anvilfs pulls in runtime dependencies
+# that are not installed while the package is being built
+__about__ = {}
+_about_path = here / 'anvilfs' / '__about__.py'
+exec(_about_path.read_text(encoding='utf-8'), __about__)
+__version__ = __about__['__version__']
 
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
